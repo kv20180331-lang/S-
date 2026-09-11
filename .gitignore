@@ -1,0 +1,10 @@
+.DS_Store
+*.zip
+
+# Local handoff / generated aggregation files
+S城新闻沙盘_GPT可读完整源码.txt
+index-html源代码.txt
+
+# Historical local backup folders
+backup_before_*/
+S城新闻沙盘_ChatGPT完整交接包*/

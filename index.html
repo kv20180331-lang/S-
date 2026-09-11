@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="S城新闻沙盘 V1.0——八年级语文新闻单元互动教学产品">
+  <title>S城新闻沙盘 V1.0</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="enhancement.css">
+  <link rel="stylesheet" href="v1.css">
+  <link rel="stylesheet" href="desk-v2.css">
+  <link rel="stylesheet" href="reporting.css?v=student-flow-optional">
+</head>
+<body>
+  <div id="app" aria-live="polite"></div>
+  <button id="teacherToggle" class="teacher-toggle" aria-label="打开教师控制" hidden>教师控制</button>
+  <aside id="teacherPanel" class="teacher-panel" hidden>
+    <header><div><span>DIRECTOR MODE</span><h2>教师控制</h2></div><button id="teacherClose" aria-label="关闭">×</button></header>
+    <p>本地导演模式不会同步到其他设备。</p>
+    <div id="teacherActions" class="teacher-actions"></div>
+    <button id="resetDay" class="danger-button">重新开始新闻日</button>
+  </aside>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="data.js"></script>
+  <script src="reporting-data.js?v=student-flow-optional"></script>
+  <script src="app.js?v=student-flow-optional"></script>
+</body>
+</html>
