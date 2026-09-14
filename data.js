@@ -159,5 +159,5 @@ const WIRE_EVENTS=WIRE_ROWS.map(row=>toEvent(row,{desk:"national_world",scope:"n
 
 const EVENTS=[...CITY_EVENTS,...GOVERNMENT_EVENTS,...MARKET_EVENTS,...WIRE_EVENTS];
 const EDITORIAL_STATUS={tracking:{symbol:"★",label:"追踪"},pending:{symbol:"？",label:"待核"},confirmed:{symbol:"✓",label:"已确认"},dropped:{symbol:"×",label:"放弃"}};
-const DISCARD_REASONS=["公共影响较小","信息仍不足","已经被更重大事件覆盖","与其他新闻高度重复","时效性下降","已经证伪","其他"];
+const DISCARD_REASONS=["信息尚未核实","来源比较单一","新闻价值有限","与更重要新闻相比优先级较低","事件仍在发展","与其他报道重复","其他"];
 const DESKS={city:{code:"CITY",label:"城市现场",short:"城市"},government:{code:"GOVERNMENT",label:"政务信息",short:"政务"},markets:{code:"MARKETS",label:"财经市场",short:"财经"},national_world:{code:"NATIONAL / WORLD",label:"国内·国际",short:"国内·国际"}};
