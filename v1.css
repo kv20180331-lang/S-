@@ -55,3 +55,45 @@ body:has(.published-scene){background:#e9ece8}.published-scene{max-width:1120px;
 
 /* 全站一键清空本机记录按钮。 */
 .clear-records-button{position:fixed;right:18px;bottom:18px;z-index:140;padding:9px 12px;border:1px solid #dfc7be;border-radius:999px;background:#fff7f3;color:#9b3f32;font-size:10px;font-weight:800;box-shadow:0 10px 26px rgba(38,50,54,.13);cursor:pointer}.clear-records-button:hover{background:#fae7e2;border-color:#d99c8b}@media print{.clear-records-button{display:none!important}}
+
+/* 八年级课堂最终版：全站阅读字号提升，不使用 zoom / scale。 */
+html,body{font-size:16px!important;line-height:1.62!important}
+body,input,textarea,select,button{font-size:16px}
+button,.primary-action,.secondary-action,.danger-button,.desk-next,.publish-button,.print-action{font-size:16px!important;line-height:1.35!important}
+input,textarea,select{font-size:16px!important;line-height:1.55!important}
+textarea{line-height:1.7!important}
+
+.identity h1{font-size:31px!important}.identity p,.kicker{font-size:13px!important}.desk-status small{font-size:13px!important}.desk-status b{font-size:15px!important}
+.masthead{min-height:96px;height:auto}.desk-ribbon{min-height:42px;height:auto;font-size:15px!important;line-height:1.45}.desk-ribbon time,.desk-ribbon>span{font-size:13px!important}.section-head h2{font-size:24px!important}.section-head{min-height:82px;height:auto}
+
+.wire-filter{min-height:46px;height:auto;font-size:14px!important}.wire-filter-buttons button{font-size:14px!important}
+.wire-item{padding:15px 14px!important}.wire-top time{font-size:16px!important}.wire-top span{font-size:13px!important}.wire-item h3{font-size:17px!important;line-height:1.45!important}.wire-item>p,.wire-source{font-size:15px!important;line-height:1.6!important;white-space:normal!important}.wire-tags span,.wire-tags em,.desk-badge{font-size:12px!important;line-height:1.35!important}.wire-empty{font-size:15px!important;line-height:1.6!important}
+
+.place-icon{width:32px!important;height:32px!important;font-size:14px!important}.place-name{font-size:12px!important;line-height:1.25!important}.region span{font-size:12px!important}.map-legend,.map-caption{font-size:13px!important}.water b{font-size:17px!important}.water small,.river span,.road span{font-size:11px!important}
+
+.place-head h2,.editor-note h2{font-size:27px!important}.category,.attention{font-size:12px!important}.place-head p,.place-summary,.timeline-label{font-size:14px!important}.event-time time{font-size:14px!important}.event-status span{font-size:12px!important}.event-body h3{font-size:18px!important;line-height:1.45!important}.event-body p{font-size:16px!important;line-height:1.65!important}.event-body dt{font-size:12px!important}.event-body dd{font-size:13px!important}.editor-note li b{font-size:16px!important}.editor-note li span,.select-tip,.no-news{font-size:15px!important}
+
+.stage-intro b,.round-button time{font-size:18px!important}.round-button span,.discovery,.deadline-gate small{font-size:14px!important}.stage-dock{min-height:78px;height:auto}
+
+.brief-main h1,.meeting-scene h1,.bulletin-scene h1,.edition-scene>header h1,.review-scene>header h1{font-size:34px!important;line-height:1.2!important}.brief-main p,.identity-line,.brief-main li,.briefing-form>footer p,.meeting-scene header p,.bulletin-scene header p,.edition-scene>header p,.review-scene>header p{font-size:16px!important;line-height:1.7!important}
+.profile-guidance,.profile-note,.profile-form label,.profile-form .member-roles label,.member-card>header b,.member-card>header small{font-size:14px!important;line-height:1.45!important}.member-card{padding:11px 12px!important}.member-fields{gap:9px!important}
+.meeting-form,.meeting-form p,.meeting-option span,.meeting-option small,.change-field label,.evidence-options label,.text-question span{font-size:15px!important;line-height:1.6!important}.headline-choices label{font-size:16px!important}
+
+.student-step-hint p{font-size:16px!important;line-height:1.6!important}.student-step-hint summary,.student-step-hint details span{font-size:15px!important;line-height:1.55!important}.term-info i{font-size:14px!important}
+.optional-flow-note,.publication-memory p,.publication-decision-scene legend,.decision-radio label,.decision-reasons label{font-size:15px!important;line-height:1.6!important}
+
+.reporting-header h1{font-size:36px!important}.reporting-header p,.reporting-rule,.reporting-intro-copy p,.reporting-note li,.story-selector header p,.selection-rule,.progress-copy{font-size:16px!important;line-height:1.65!important}.reporting-kicker,.reporting-header span,.story-file span,.genre-select-card span,.desk-card span,.reporting-column header span,.material-card header span{font-size:12px!important}
+.story-file h3,.genre-select-card h3,.desk-card h3{font-size:20px!important;line-height:1.35!important}.story-file p,.genre-select-card p,.desk-card p,.story-directions span,.story-directions small{font-size:15px!important;line-height:1.6!important}
+.fact-record h3,.material-card h3{font-size:18px!important;line-height:1.45!important}.fact-record p,.material-card p,.material-card li,.material-card blockquote,.usage-key span,.reporting-review-details{font-size:15px!important;line-height:1.65!important}.source-line,.material-warning{font-size:14px!important}.reporting-column header p,.completeness li,.reporting-action-card p{font-size:15px!important;line-height:1.6!important}.quota-meter b{font-size:16px!important}
+
+.writing-reference>header h2,.writing-paper>header h2{font-size:26px!important}.writing-reference>header span,.writing-paper>header span,.planning-board>span,.fact-check>span{font-size:12px!important}.writing-paper>header p,.planning-board label,.writing-form label,.fact-check label,.draft-status{font-size:15px!important;line-height:1.6!important}.planning-board h3,.fact-check h3{font-size:20px!important}.writing-form textarea[name="body"]{font-size:16px!important;line-height:1.85!important}.word-meter{font-size:14px!important}
+
+.edition-conference h2,.edition-briefing>header h2,.discard-editor h2{font-size:27px!important}.edition-conference header p,.edition-briefing>header p,.edition-brief-note,.discard-editor p{font-size:16px!important;line-height:1.65!important}.lead-work-card h3,.edition-brief-groups h3{font-size:20px!important}.lead-work-card p,.lead-work-card small,.edition-brief-row span b,.edition-brief-row small,.discard-row{font-size:15px!important;line-height:1.5!important}.edition-briefing>header strong{font-size:15px!important}.edition-scene label{font-size:15px!important}
+
+.published-scene{font-size:16px!important}.newspaper-name h1{font-size:36px!important}.newspaper-name span,.published-headline>span,.top-stories>header span,.published-section>header>span,.published-credits span{font-size:13px!important}.newspaper-name p,.newspaper-edition time,.newspaper-nav a,.published-byline b,.published-headline footer,.top-stories article footer{font-size:13px!important}.published-headline h2{font-size:46px!important}.published-headline h3{font-size:20px!important;line-height:1.65!important}.published-headline>p,.published-work .work-body{font-size:16px!important;line-height:1.95!important}.top-stories article h2,.published-section>header h2{font-size:27px!important}.top-stories article p,.published-brief-card p{font-size:15px!important;line-height:1.75!important}.published-brief-card h3{font-size:18px!important}.published-brief-card footer,.published-market-note,.market-method,.published-credits>p{font-size:13px!important}
+
+.review-block>time{font-size:18px!important}.review-block>div>span,.version-card b,.status-review>span{font-size:13px!important}.review-block h2,.status-review h2{font-size:24px!important}.review-block p,.status-review p,.reflection-form label,.reflection-form legend,.reflection-form fieldset label,.reflection-context b{font-size:16px!important;line-height:1.65!important}.status-review h3,.reflection-context span,.review-newsroom-members b,.review-newsroom-members p{font-size:15px!important}.final-reflection-panel h2,.legacy-bulletin-review h2{font-size:28px!important}
+.clear-records-button{font-size:14px!important;padding:10px 14px!important}
+
+@media(max-width:1100px){.news-desk{grid-template-columns:minmax(280px,28%) minmax(420px,1fr);height:auto;min-height:0}.detail-panel{grid-column:1/-1}.event-list{height:auto;max-height:560px}.wire-list{max-height:520px}.stage-dock{grid-template-columns:1fr;gap:10px}.round-progress{overflow:auto}}
+@media(max-width:760px){.published-headline>p{columns:1!important}.published-work.communication .work-body{columns:1!important}.lead-package,.top-stories>div,.published-section-grid,.edition-brief-groups{grid-template-columns:1fr!important}.clear-records-button{right:12px;bottom:12px}}
