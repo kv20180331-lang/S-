@@ -719,9 +719,19 @@
     const scene=newsroomState.currentScene;
     if(scene==="cover")renderCover(); else if(scene==="briefing")renderBriefing(); else if(/^round/.test(scene))renderDesk(); else if(scene==="meeting1")renderMeeting(1); else if(scene==="transition2")renderTransition(2); else if(scene==="meeting2")renderMeeting(2); else if(scene==="publicationDecision"||scene==="midday")renderPublicationDecision(); else if(scene==="bulletinVersion")renderBulletinVersion(); else if(scene==="transition3")renderTransition(3); else if(scene==="deadline")renderDeadline(); else if(scene==="reportingIntro")renderReportingIntro(); else if(scene==="reportingSelect")renderReportingSelect(); else if(scene==="reportingCommunication")renderMaterialWorkspace("communication"); else if(scene==="reportingFeature")renderMaterialWorkspace("feature"); else if(scene==="reportingCommentary")renderMaterialWorkspace("commentary"); else if(scene==="writingNews")renderWriting("news"); else if(scene==="writingCommunication")renderWriting("communication"); else if(scene==="writingFeature")renderWriting("feature"); else if(scene==="writingCommentary")renderWriting("commentary"); else if(scene==="edition")renderEdition(); else if(scene==="published")renderPublished(); else if(scene==="review"){renderReview();appendDeskReview();appendReportingReview();} else {newsroomState.currentScene="cover";saveState();renderCover();}
     appendBackButton();
+    appendClearRecordsButton();
     renderTeacherActions();
   }
   function appendBackButton() { if(newsroomState.currentScene==="cover"||$(".scene-back"))return;const button=document.createElement("button");button.className="scene-back";button.dataset.action="back";button.innerHTML="<span>←</span> 返回";const mast=$(".masthead");if(mast){button.classList.add("in-masthead");mast.prepend(button);}else{const scene=app.firstElementChild;scene?.classList.add("has-scene-back");scene?.prepend(button);} }
+  function appendClearRecordsButton() {
+    if($(".clear-records-button"))return;
+    const button=document.createElement("button");
+    button.className="clear-records-button";
+    button.dataset.action="reset";
+    button.title="清空本机保存的全部课堂记录";
+    button.textContent="清空记录";
+    app.append(button);
+  }
 
   function openDesk(desk) {
     if(newsroomState.deadlineLocked){toast("新闻日已截稿：Desk仅可回看已发现信息");return;}
@@ -906,7 +916,7 @@
     clearTimeout(queueWritingAutosave.timer);
     queueWritingAutosave.timer=setTimeout(()=>saveWritingDraft(form,{quiet:true}),250);
   }
-  function resetDay(){if(!confirm("确定重新开始新闻日吗？当前所有会议记录、采访历史和版面内容都将清空。"))return;localStorage.removeItem(STORAGE_KEY);newsroomState=freshState();$("#teacherPanel").hidden=true;render();}
+  function resetDay(){if(!confirm("确定清空所有记录吗？\n\n这会清除本机保存的编辑部资料、已发现线索、采访记录、写作内容、版面和复盘，并回到封面。"))return;localStorage.removeItem(STORAGE_KEY);newsroomState=freshState();const panel=$("#teacherPanel");if(panel)panel.hidden=true;render();toast("所有记录已清空");}
 
   app.addEventListener("click",event=>{
     const action=event.target.closest("[data-action]")?.dataset.action;
