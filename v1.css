@@ -97,3 +97,18 @@ textarea{line-height:1.7!important}
 
 @media(max-width:1100px){.news-desk{grid-template-columns:minmax(280px,28%) minmax(420px,1fr);height:auto;min-height:0}.detail-panel{grid-column:1/-1}.event-list{height:auto;max-height:560px}.wire-list{max-height:520px}.stage-dock{grid-template-columns:1fr;gap:10px}.round-progress{overflow:auto}}
 @media(max-width:760px){.published-headline>p{columns:1!important}.published-work.communication .work-body{columns:1!important}.lead-package,.top-stories>div,.published-section-grid,.edition-brief-groups{grid-template-columns:1fr!important}.clear-records-button{right:12px;bottom:12px}}
+
+/* 学生流程修复：清楚区分写作篇幅状态，并让长表单更容易在课堂屏幕上操作。 */
+.word-meter strong.empty{color:#7d8a86!important}.word-meter strong.under{color:#a7632d!important}.word-meter strong.ready{color:#26766c!important}.word-meter strong.over{color:#a4473c!important}
+@media(min-width:821px){.writing-paper{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+
+/* 最终版面会议：栏目按需展开，避免所有候选线索一次铺满整页。 */
+.edition-brief-groups{grid-template-columns:1fr!important;gap:10px!important}
+.edition-brief-group{border:1px solid #dbe2df;border-radius:5px;background:#fbfcfa;overflow:hidden}
+.edition-brief-group>summary{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;color:var(--navy);cursor:pointer;list-style:none}
+.edition-brief-group>summary::-webkit-details-marker{display:none}.edition-brief-group>summary:before{content:"＋";margin-right:9px;color:var(--teal);font-weight:900}.edition-brief-group[open]>summary:before{content:"－"}
+.edition-brief-group>summary b{margin-right:auto;font-size:18px}.edition-brief-group>summary small{color:#758681;font-size:14px}.edition-brief-group>div{border-top:1px solid #dbe2df}
+.discard-editor>summary{display:flex;padding:2px;cursor:pointer;list-style:none}.discard-editor>summary::-webkit-details-marker{display:none}.discard-editor>summary span{display:flex;width:100%;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:4px;background:#f4f6f3}.discard-editor>summary b{font-size:18px;color:var(--navy)}.discard-editor>summary small{font-size:14px;color:#758681}.discard-editor[open]>summary{margin-bottom:14px}.discard-editor:not([open])>header,.discard-editor:not([open])>.discard-list{display:none}
+
+/* 1366×768 一类课堂笔记本：让底部阶段条进入首屏。 */
+@media(max-height:820px) and (min-width:1101px){.v1-desk{height:calc(100vh - 292px);min-height:430px}.v1-stage{position:sticky;bottom:0;z-index:40}.map-panel,.city-map{min-height:430px}}
