@@ -10,12 +10,16 @@
     {id:"production",label:"文字 / 版面"}
   ];
   const emptyMembers = () => Array.from({length:4},()=>({name:"",roles:[]}));
-  const emptyWritingSet = () => ({news:{},communication:{},feature:{},commentary:{}});
+  const REPORTING_SLOT_KEYS = Object.keys(REPORTING_GENRES);
+  const slotFamily = (slot) => REPORTING_GENRES[slot]?.family || slot;
+  const emptySlotSet = (valueFactory=()=>null) => Object.fromEntries(REPORTING_SLOT_KEYS.map(slot=>[slot,valueFactory(slot)]));
+  const emptyWritingSet = () => emptySlotSet(()=>({}));
   const freshReporting = () => ({
-    selectedStories:{news:null,communication:null,feature:null,commentary:null},
-    acquiredMaterialIds:[], communicationActions:[], featureFollowUp:null,
+    selectedStories:emptySlotSet(()=>null),
+    acquiredMaterialIds:[], newsActions:[], communicationActions:[], featureFollowUp:null,
     commentaryActions:[], writingPlans:emptyWritingSet(),
-    drafts:{news:null,communication:null,feature:null,commentary:null},
+    selectedAngles:emptySlotSet(()=>null), customAngles:emptySlotSet(()=>""),
+    drafts:emptySlotSet(()=>null),
     unlockedStoryIds:[]
   });
   const freshState = () => ({
@@ -33,18 +37,29 @@
     const base=freshReporting();
     const validStoryIds=new Set(REPORTING_STORIES.map(story=>story.id));
     const validMaterialIds=new Set(REPORTING_MATERIALS.map(item=>item.id));
-    const selectedStories={...base.selectedStories,...(reporting.selectedStories||{})};
+    const legacySelected=reporting.selectedStories||{};
+    const selectedStories={...base.selectedStories,...legacySelected};
+    if(!selectedStories.news1&&legacySelected.news)selectedStories.news1=legacySelected.news;
     Object.keys(selectedStories).forEach(genre=>{if(!validStoryIds.has(selectedStories[genre]))selectedStories[genre]=null;});
     const cleanIds=value=>[...new Set(Array.isArray(value)?value:[])].filter(id=>validMaterialIds.has(id));
-    const drafts={...base.drafts,...(reporting.drafts||{})};
-    const writingPlans={...base.writingPlans,...(reporting.writingPlans||{})};
+    const legacyDrafts=reporting.drafts||{};
+    const drafts={...base.drafts,...legacyDrafts};
+    if(!drafts.news1&&legacyDrafts.news)drafts.news1={...legacyDrafts.news,genre:"news1"};
+    delete drafts.news; delete drafts.communication;
+    const legacyPlans=reporting.writingPlans||{};
+    const writingPlans={...base.writingPlans,...legacyPlans};
+    if(!Object.keys(writingPlans.news1||{}).length&&legacyPlans.news)writingPlans.news1=legacyPlans.news;
+    delete writingPlans.news; delete writingPlans.communication;
+    const selectedAngles={...base.selectedAngles,...(reporting.selectedAngles||{})};
+    const customAngles={...base.customAngles,...(reporting.customAngles||{})};
     return {
       ...base,...reporting,selectedStories,
       acquiredMaterialIds:cleanIds(reporting.acquiredMaterialIds),
+      newsActions:cleanIds([...(reporting.newsActions||[]),...(reporting.communicationActions||[])]),
       communicationActions:cleanIds(reporting.communicationActions),
       commentaryActions:cleanIds(reporting.commentaryActions),
       featureFollowUp:validMaterialIds.has(reporting.featureFollowUp)?reporting.featureFollowUp:null,
-      writingPlans,drafts,
+      selectedAngles,customAngles,writingPlans,drafts,
       unlockedStoryIds:[...new Set(Array.isArray(reporting.unlockedStoryIds)?reporting.unlockedStoryIds:[])].filter(id=>validStoryIds.has(id))
     };
   }
@@ -106,7 +121,7 @@
   function roleLabel(roleId) { return NEWSROOM_ROLES.find(role=>role.id===roleId)?.label||roleId; }
   function isReportingEdition(edition=newsroomState.finalEdition) { return edition?.mode === "reporting"; }
   function draftCompleted(draft) { return Boolean(draft?.completed ?? draft?.submitted); }
-  function allReportingDraftsSubmitted() { return Object.values(newsroomState.reporting.drafts).every(draftCompleted); }
+  function allReportingDraftsSubmitted() { return REPORTING_SLOT_KEYS.every(slot=>draftCompleted(newsroomState.reporting.drafts[slot])); }
   function leadReportingDraft() {
     if(!isReportingEdition()) return null;
     return newsroomState.reporting.drafts[newsroomState.finalEdition.leadGenre] || null;
@@ -152,7 +167,7 @@
   }
   function goBack() {
     if(newsroomState.currentScene==="cover")return;
-    const parent={briefing:"cover",round1:"briefing",meeting1:"round1",transition2:"meeting1",round2:"transition2",meeting2:"round2",publicationDecision:"meeting2",midday:"meeting2",transition3:"publicationDecision",round3:"transition3",deadline:"round3",reportingIntro:"deadline",reportingSelect:"reportingIntro",reportingCommunication:"reportingSelect",reportingFeature:"reportingSelect",reportingCommentary:"reportingSelect",writingNews:"reportingSelect",writingCommunication:"reportingCommunication",writingFeature:"reportingFeature",writingCommentary:"reportingCommentary",edition:"reportingSelect",published:"edition",review:"published",bulletinVersion:"round3"};
+    const parent={briefing:"cover",round1:"briefing",meeting1:"round1",transition2:"meeting1",round2:"transition2",meeting2:"round2",publicationDecision:"meeting2",midday:"meeting2",transition3:"publicationDecision",round3:"transition3",deadline:"round3",reportingIntro:"deadline",reportingSelect:"reportingIntro",reportingNews1:"reportingSelect",reportingNews2:"reportingSelect",reportingFeature:"reportingSelect",reportingCommentary:"reportingSelect",writingNews1:"reportingNews1",writingNews2:"reportingNews2",writingFeature:"reportingFeature",writingCommentary:"reportingCommentary",edition:"reportingSelect",published:"edition",review:"published",bulletinVersion:"round3"};
     const from=newsroomState.currentScene;
     let target=null;
     while(newsroomState.sceneHistory.length&&!target){
@@ -214,7 +229,7 @@
   }
   function reportingPlanFeasibility() {
     const candidates={};
-    Object.keys(REPORTING_GENRES).forEach(genre=>{candidates[genre]=availableReportingStories().filter(story=>story.genres.includes(genre));});
+    REPORTING_SLOT_KEYS.forEach(genre=>{candidates[genre]=availableReportingStories().filter(story=>story.genres.includes(slotFamily(genre)));});
     const missingGenres=Object.entries(candidates).filter(([,items])=>!items.length).map(([genre])=>REPORTING_GENRES[genre].label);
     const reasons=[];
     if(missingGenres.length)reasons.push(`还缺可用于${missingGenres.join("、")}的已发现故事`);
@@ -232,7 +247,7 @@
     newsroomState.reporting.unlockedStoryIds=[...new Set([...newsroomState.reporting.unlockedStoryIds,...ids])];
     return ids;
   }
-  function materialsFor(storyId,genre) { return REPORTING_MATERIALS.filter(item=>item.storyline===storyId&&(!genre||item.genres.includes(genre))); }
+  function materialsFor(storyId,genre) { const family=genre?slotFamily(genre):null;return REPORTING_MATERIALS.filter(item=>item.storyline===storyId&&(!family||item.genres.includes(family))); }
   function acquireMaterial(id) {
     if(!reportingMaterial(id)||newsroomState.reporting.acquiredMaterialIds.includes(id))return false;
     newsroomState.reporting.acquiredMaterialIds.push(id);return true;
@@ -240,24 +255,13 @@
   function ensureAutomaticMaterials() {
     Object.entries(newsroomState.reporting.selectedStories).forEach(([genre,storyId])=>{
       if(!storyId)return;
-      materialsFor(storyId,genre).filter(item=>item.autoGenres.includes(genre)).forEach(item=>acquireMaterial(item.id));
+      materialsFor(storyId,genre).filter(item=>item.autoGenres.includes(slotFamily(genre))).forEach(item=>acquireMaterial(item.id));
     });
   }
   function acquiredMaterials(storyId,genre) {
-    return newsroomState.reporting.acquiredMaterialIds.map(reportingMaterial).filter(item=>item&&item.storyline===storyId&&(!genre||item.genres.includes(genre)));
+    return newsroomState.reporting.acquiredMaterialIds.map(reportingMaterial).filter(item=>item&&item.storyline===storyId&&(!genre||item.genres.includes(slotFamily(genre))));
   }
   function isViewpointMaterial(item) { return item.type==="viewpoint"||(item.type==="interview"&&item.autoGenres.includes("commentary")); }
-  function communicationCompleteness(storyId) {
-    const items=acquiredMaterials(storyId,"communication");
-    const interviews=items.filter(item=>item.type==="interview");
-    const background=items.filter(item=>["background","data"].includes(item.type));
-    const process=storyEvents(storyId).length>=2||items.some(item=>item.process);
-    const missing=[];
-    if(interviews.length<2)missing.push(`还需要 ${2-interviews.length} 位人物的直接采访`);
-    if(!background.length)missing.push("还需要 1 份背景或数据材料");
-    if(!process)missing.push("还需要补齐事实发展过程");
-    return {complete:!missing.length,missing,interviews:interviews.length,background:background.length,process};
-  }
   function featureCompleteness(storyId) {
     const items=acquiredMaterials(storyId,"feature");
     const field=items.filter(item=>item.type==="field_note");
@@ -285,13 +289,35 @@
     return {complete:!missing.length,missing,factCount,viewpoints:independent,support};
   }
   function reportingCompleteness(genre,storyId) {
-    if(genre==="communication")return communicationCompleteness(storyId);
-    if(genre==="feature")return featureCompleteness(storyId);
-    if(genre==="commentary")return commentaryCompleteness(storyId);
+    const family=slotFamily(genre);
+    if(family==="news")return {complete:storyEvents(storyId).length>0,missing:[]};
+    if(family==="feature")return featureCompleteness(storyId);
+    if(family==="commentary")return commentaryCompleteness(storyId);
     return {complete:storyEvents(storyId).length>0,missing:[]};
   }
   function reportingSceneFor(genre,writing=false) { return `${writing?"writing":"reporting"}${genre[0].toUpperCase()}${genre.slice(1)}`; }
   function materialTypeLabel(type) { return ({fact:"事实",interview:"人物采访",field_note:"现场笔记",background:"背景资料",viewpoint:"观点",data:"数据资料"})[type]||type; }
+  function angleCardsFor(genre,storyId) {
+    const family=slotFamily(genre), cards=REPORTING_ANGLE_CARDS?.[family]?.[storyId]||[];
+    return cards.filter(card=>{
+      const badEvents=(card.eventIds||[]).filter(id=>!eventById(id));
+      const badMaterials=(card.materialIds||[]).filter(id=>{const item=reportingMaterial(id);return !item||!item.genres.includes(family);});
+      if(badEvents.length||badMaterials.length){console.error("Invalid reporting angle card",{storyId,genre,cardId:card.id,badEvents,badMaterials});return false;}
+      return true;
+    });
+  }
+  function angleText(genre) {
+    const storyId=newsroomState.reporting.selectedStories[genre];
+    const selected=newsroomState.reporting.selectedAngles?.[genre];
+    if(selected==="custom")return newsroomState.reporting.customAngles?.[genre]?.trim()||"自定报道角度";
+    const card=angleCardsFor(genre,storyId).find(item=>item.id===selected);
+    return card?.title||"尚未选择报道角度";
+  }
+  function renderAngleChooser(genre,storyId) {
+    const cards=angleCardsFor(genre,storyId), selected=newsroomState.reporting.selectedAngles?.[genre]||"", custom=newsroomState.reporting.customAngles?.[genre]||"";
+    const cardHtml=cards.map(card=>{const materials=(card.materialIds||[]).map(reportingMaterial).filter(Boolean);return `<article class="angle-card ${selected===card.id?"active":""}"><span>ANGLE CARD</span><h3>${html(card.title)}</h3><p>${html(card.question)}</p>${materials.length?`<small>材料提示：${materials.map(item=>materialTypeLabel(item.type)).join(" · ")}</small>`:""}${card.hint?`<em>${html(card.hint)}</em>`:""}<button data-angle-card="${card.id}" data-angle-genre="${genre}">${selected===card.id?"已选择":"选择这个角度"}</button></article>`;}).join("");
+    return `<section class="angle-panel"><header><span>REPORTING ANGLE</span><h2>报道角度提示卡</h2><p>提示卡只告诉你可以追问什么，不提前展示材料内容。你也可以使用自己的角度。</p></header><div class="angle-grid">${cardHtml||`<div class="desk-empty">当前故事暂无预设角度卡，可使用自定报道角度。</div>`}</div><article class="angle-custom ${selected==="custom"?"active":""}"><label>我有自己的报道角度<textarea data-custom-angle="${genre}" placeholder="我们最想回答：____">${html(custom)}</textarea></label><button data-save-custom-angle="${genre}">保存自定角度</button></article><p class="current-angle">当前报道角度：<b>${html(angleText(genre))}</b></p></section>`;
+  }
   function wordCount(text="") { return String(text).replace(/\s/g,"").length; }
   function verificationLabel(status) { return ({verified:"已核实",partially_verified:"部分核实",single_source:"单一来源",unverified:"尚未核实",debunked:"已证伪",under_investigation:"调查中"})[status] || status; }
   function accessLabel(value) { if(typeof value==="object")return value.acquisition||accessLabel(value.accessType);return ({location:"地点查询",investigation:"记者采访",public:"官方发布",map:"地点查询",desk_discovery:"地点查询"})[value]||value; }
@@ -324,7 +350,6 @@
     reportingIntro:["这篇文章现在更缺人物、现场、背景、数据，还是不同观点？"],
     reportingSelect:["哪类文体最适合这条新闻？","四篇作品要分散报道，还是集中比较不同写法？"],
     news:["如果读者只看第一句话，他最需要先知道什么？","最新的事实一定是最重要的吗？"],
-    communication:["事情是怎样发展的？","它具体影响了谁？"],
     feature:["哪个真实的现场或瞬间最值得放大？","素材里有哪些动作、声音和环境细节？"],
     commentary:["你的观点依据是什么？","有没有另一种值得回应的看法？"],
     edition:["头条应该是你们最喜欢的一篇，还是今天公众最需要知道的一篇？"],
@@ -342,7 +367,7 @@
   function renderBriefing() {
     const profile=newsroomState.newsroomProfile;
     const started=newsroomState.currentRound>0||newsroomState.grantedRounds.includes(1);
-    app.innerHTML=`<section class="scene briefing-scene"><div class="briefing-paper"><header><span>S CITY DAILY · MORNING BRIEF</span><time>${SIMULATION.date} ${SIMULATION.weekday}　09:00</time></header><form id="profileForm" class="briefing-form" novalidate><div class="briefing-grid"><div class="brief-main"><p class="kicker">TODAY'S ASSIGNMENT</p><h1>17:00前，完成今天的新闻采集与编辑判断。</h1><p class="identity-line">你们是<strong>《S城日报》城市新闻部</strong>。17:00之前，你们首先是一间新闻编辑部：决定去哪里、相信什么、继续查什么、什么值得报道。新闻日结束以后，再把真正掌握的事实写成消息、通讯、新闻特写和评论。</p><div class="edition-rule"><b>17:00</b><span>新闻日截稿</span><i></i><b>4</b><span>课堂形成初稿</span></div><ul><li>发布事实必须注明来源</li><li>关键事实必须得到充分核实</li><li>优先使用相互独立的来源交叉验证</li><li>判断可以修改，但必须说明为什么修改</li></ul></div><aside class="profile-form"><p class="kicker">BUILD YOUR NEWSROOM</p><h2>${started?"修改编辑部资料":"建立编辑部"}</h2><p class="profile-guidance"><b>3—4人组成一个编辑部。</b>4人组可以一人一职；3人组由一名成员兼任两项职责。重要决定由全组共同讨论。</p><label class="profile-name">编辑部名称（选填）<input name="name" value="${html(profile.name)}" placeholder="例如：第三编辑部"></label><div class="member-fields">${profile.members.map((member,index)=>`<article class="member-card"><header><b>成员 ${String(index+1).padStart(2,"0")}</b><small>OPTIONAL</small></header><label class="member-name">姓名（选填）<input name="member${index+1}Name" value="${html(member.name)}" placeholder="填写姓名"></label><div class="member-roles" aria-label="成员${index+1}职责">${NEWSROOM_ROLES.map(role=>`<label><input type="checkbox" name="member${index+1}Roles" value="${role.id}" ${member.roles.includes(role.id)?"checked":""}><span>${role.label}</span></label>`).join("")}</div></article>`).join("")}</div><p class="profile-note"><b>四项职责：</b>主编 / 选题负责主持讨论和确定重点新闻；记者 / 调查负责寻找线索和选择采访；核实负责检查来源和事实；文字 / 版面负责整理稿件和最终版面。角色分工是课堂建议，不是系统门槛。</p></aside></div><footer><p>采访机会由整个编辑部共享：09:00 +3、13:00 +3、17:00 +2。<br>选择把记者派往哪里，本身就是编辑判断。</p><button class="primary-action" type="submit">${started?"保存编辑部资料":"09:00 开始工作"} <span>→</span></button></footer></form></div></section>`;
+    app.innerHTML=`<section class="scene briefing-scene"><div class="briefing-paper"><header><span>S CITY DAILY · MORNING BRIEF</span><time>${SIMULATION.date} ${SIMULATION.weekday}　09:00</time></header><form id="profileForm" class="briefing-form" novalidate><div class="briefing-grid"><div class="brief-main"><p class="kicker">TODAY'S ASSIGNMENT</p><h1>17:00前，完成今天的新闻采集与编辑判断。</h1><p class="identity-line">你们是<strong>《S城日报》城市新闻部</strong>。17:00之前，你们首先是一间新闻编辑部：决定去哪里、相信什么、继续查什么、什么值得报道。新闻日结束以后，再把真正掌握的事实写成消息一、消息二、新闻特写和评论。</p><div class="edition-rule"><b>17:00</b><span>新闻日截稿</span><i></i><b>4</b><span>课堂形成初稿</span></div><ul><li>发布事实必须注明来源</li><li>关键事实必须得到充分核实</li><li>优先使用相互独立的来源交叉验证</li><li>判断可以修改，但必须说明为什么修改</li></ul></div><aside class="profile-form"><p class="kicker">BUILD YOUR NEWSROOM</p><h2>${started?"修改编辑部资料":"建立编辑部"}</h2><p class="profile-guidance"><b>3—4人组成一个编辑部。</b>4人组可以一人一职；3人组由一名成员兼任两项职责。重要决定由全组共同讨论。</p><label class="profile-name">编辑部名称（选填）<input name="name" value="${html(profile.name)}" placeholder="例如：第三编辑部"></label><div class="member-fields">${profile.members.map((member,index)=>`<article class="member-card"><header><b>成员 ${String(index+1).padStart(2,"0")}</b><small>OPTIONAL</small></header><label class="member-name">姓名（选填）<input name="member${index+1}Name" value="${html(member.name)}" placeholder="填写姓名"></label><div class="member-roles" aria-label="成员${index+1}职责">${NEWSROOM_ROLES.map(role=>`<label><input type="checkbox" name="member${index+1}Roles" value="${role.id}" ${member.roles.includes(role.id)?"checked":""}><span>${role.label}</span></label>`).join("")}</div></article>`).join("")}</div><p class="profile-note"><b>四项职责：</b>主编 / 选题负责主持讨论和确定重点新闻；记者 / 调查负责寻找线索和选择采访；核实负责检查来源和事实；文字 / 版面负责整理稿件和最终版面。角色分工是课堂建议，不是系统门槛。</p></aside></div><footer><p>采访机会由整个编辑部共享：09:00 +3、13:00 +3、17:00 +2。<br>选择把记者派往哪里，本身就是编辑判断。</p><button class="primary-action" type="submit">${started?"保存编辑部资料":"09:00 开始工作"} <span>→</span></button></footer></form></div></section>`;
   }
 
   function regionLayer() { return REGIONS.map(region=>`<div class="region tone-${region.tone} region-${region.id}" style="--x:${region.x}%;--y:${region.y}%;--w:${region.w}%;--h:${region.h}%"><span>${region.name}</span></div>`).join(""); }
@@ -453,21 +478,21 @@
   }
   function renderReportingIntro() {
     const unlocked=availableReportingStories();rememberUnlockedStories();saveState();
-    app.innerHTML=`${masthead()}<main class="scene reporting-scene"><div class="reporting-wrap">${reportingHeader("S城采写室","新闻日已经结束。深度采写只从本编辑部实际发现过的故事出发；未发现的事件不会在这里补发。")}${taskHint("从已经发现的新闻中选择报道对象，并补充真正需要的材料。","reportingIntro")}${reportingRule()}<section class="reporting-intro-copy"><article class="reporting-letter"><span class="reporting-kicker">EDITOR'S LETTER</span><h2>从线索走向作品</h2><p>今天的地图给了你们许多碎片。现在要重新打开采访本：确认事实过程、寻找人物、观察现场，并让不同观点彼此照面。</p><blockquote>四种文体不是四次改写。每一种写法，都需要重新决定材料怎样进入文章。</blockquote></article><aside class="reporting-note"><span class="reporting-kicker">WORKFLOW</span><h3>采写室工作顺序</h3><ol><li>只从已解锁的故事中选择四篇作品。</li><li>通讯、特写、评论使用各自独立的深采规则。</li><li>完成写作计划，再进入文章编辑台。</li><li>提交前逐项完成事实核对声明。</li></ol></aside></section><section class="story-selector" style="margin-top:16px"><header><div><span class="reporting-kicker">UNLOCKED STORY FILES</span><h2>本组可进入深采的故事</h2></div><p>这里只列出已经满足解锁条件的故事，不对选题进行评分或推荐。</p></header><div class="story-grid">${unlocked.map(reportingStoryCard).join("")||`<div class="wire-empty"><b>尚无可进入深采的故事</b><span>请返回新闻日，通过地图发现并核实更多线索。</span></div>`}</div></section><div class="reporting-actions"><span class="progress-copy">已解锁 ${unlocked.length} 个深采故事</span><button class="primary-action" data-action="reporting-select" ${unlocked.length?"":"disabled"}>建立四篇作品计划 →</button></div></div></main>`;
+    app.innerHTML=`${masthead()}<main class="scene reporting-scene"><div class="reporting-wrap">${reportingHeader("S城采写室","新闻日已经结束。深度采写只从本编辑部实际发现过的故事出发；未发现的事件不会在这里补发。")}${taskHint("从已经发现的新闻中选择报道对象，并补充真正需要的材料。","reportingIntro")}${reportingRule()}<section class="reporting-intro-copy"><article class="reporting-letter"><span class="reporting-kicker">EDITOR'S LETTER</span><h2>从线索走向作品</h2><p>今天的地图给了你们许多碎片。现在要重新打开采访本：确认事实过程、寻找人物、观察现场，并让不同观点彼此照面。</p><blockquote>四种文体不是四次改写。每一种写法，都需要重新决定材料怎样进入文章。</blockquote></article><aside class="reporting-note"><span class="reporting-kicker">WORKFLOW</span><h3>采写室工作顺序</h3><ol><li>只从已解锁的故事中选择四篇作品。</li><li>两篇消息、特写、评论使用各自不同的材料组织方式。</li><li>完成写作计划，再进入文章编辑台。</li><li>提交前逐项完成事实核对声明。</li></ol></aside></section><section class="story-selector" style="margin-top:16px"><header><div><span class="reporting-kicker">UNLOCKED STORY FILES</span><h2>本组可进入深采的故事</h2></div><p>这里只列出已经满足解锁条件的故事，不对选题进行评分或推荐。</p></header><div class="story-grid">${unlocked.map(reportingStoryCard).join("")||`<div class="wire-empty"><b>尚无可进入深采的故事</b><span>请返回新闻日，通过地图发现并核实更多线索。</span></div>`}</div></section><div class="reporting-actions"><span class="progress-copy">已解锁 ${unlocked.length} 个深采故事</span><button class="primary-action" data-action="reporting-select" ${unlocked.length?"":"disabled"}>建立四篇作品计划 →</button></div></div></main>`;
   }
   function genreStoryOptions(genre,selected) {
-    return availableReportingStories().filter(story=>story.genres.includes(genre)).map(story=>`<option value="${story.id}" ${selected===story.id?"selected":""}>${html(story.title)}（已发现${storyEvents(story).length}条事实）</option>`).join("");
+    return availableReportingStories().filter(story=>story.genres.includes(slotFamily(genre))).map(story=>`<option value="${story.id}" ${selected===story.id?"selected":""}>${html(story.title)}（已发现${storyEvents(story).length}条事实）</option>`).join("");
   }
   function renderReportingDashboard() {
     const selections=newsroomState.reporting.selectedStories;
-    const allSelected=Object.values(selections).every(Boolean);
+    const allSelected=REPORTING_SLOT_KEYS.every(slot=>selections[slot]);
     if(!allSelected)return"";
-    return `<section class="reporting-dashboard"><header><div><span class="reporting-kicker">FOUR WRITING DESKS</span><h2>四篇作品进度</h2></div><p>消息不消耗额外深采；其余三类按各自额度获取材料。</p></header><div class="desk-cards">${Object.entries(REPORTING_GENRES).map(([genre,meta])=>{const story=reportingStory(selections[genre]);const draft=newsroomState.reporting.drafts[genre];const completed=draftCompleted(draft);const completeness=reportingCompleteness(genre,story.id);const ready=genre==="news"||completeness.complete;return `<article class="desk-card ${completed?"submitted":""}"><span>${meta.en}</span><h3>${meta.label}</h3><p>${html(story.title)}<br>${completed?`已完成 · ${html(draftDisplayTitle(genre,draft))}`:draft?"写作中":genre==="news"?"使用已发现事实，直接进入写作":ready?"已达到建议写作条件":`建议补充：${html(completeness.missing[0]||"")}`}</p><footer><b>${completed?"✓ 已完成":draft?"写作中":ready?"READY":"REPORTING"}</b><button data-open-genre="${genre}">${completed?"查看 / 修改":genre==="news"?"进入写作":"进入采写"} →</button></footer></article>`;}).join("")}</div></section>`;
+    return `<section class="reporting-dashboard"><header><div><span class="reporting-kicker">FOUR WRITING DESKS</span><h2>四篇作品进度</h2></div><p>两篇消息彼此独立选题；所有作品都可先看报道角度，再进入材料与写作。</p></header><div class="desk-cards">${Object.entries(REPORTING_GENRES).map(([genre,meta])=>{const story=reportingStory(selections[genre]);const draft=newsroomState.reporting.drafts[genre];const completed=draftCompleted(draft);const completeness=reportingCompleteness(genre,story.id);const ready=slotFamily(genre)==="news"||completeness.complete;return `<article class="desk-card ${completed?"submitted":""}"><span>${meta.en}</span><h3>${meta.label}</h3><p>${html(story.title)}<br>${completed?`已完成 · ${html(draftDisplayTitle(genre,draft))}`:draft?"写作中":slotFamily(genre)==="news"?"选择报道角度，使用最可靠事实进入消息写作":ready?"已达到建议写作条件":`建议补充：${html(completeness.missing[0]||"")}`}</p><footer><b>${completed?"✓ 已完成":draft?"写作中":ready?"READY":"REPORTING"}</b><button data-open-genre="${genre}">${completed?"查看 / 修改":"进入采写"} →</button></footer></article>`;}).join("")}</div></section>`;
   }
   function renderReportingSelect() {
     rememberUnlockedStories();ensureAutomaticMaterials();saveState();
     const selections=newsroomState.reporting.selectedStories;
-    app.innerHTML=`${masthead()}<main class="scene reporting-scene"><div class="reporting-wrap">${reportingHeader("四篇作品计划","课堂任务是完成选题、材料采集和核心写作，形成消息、通讯、新闻特写和评论四种文体的初稿。课后可以继续返回修改，完善为正式《S城日报》。","STORY CONFERENCE")}${taskHint("为消息、通讯、新闻特写和评论选择合适的报道对象。","reportingSelect")}${reportingRule()}<form id="reportingSelectionForm" class="story-selector"><header><div><span class="reporting-kicker">ASSIGNMENT BOARD</span><h2>选择报道方向</h2></div><p>作品完成后仍可修改选题与正文；已获得材料和已消耗的深采机会不会退回。</p></header><div class="genre-selection-grid">${Object.entries(REPORTING_GENRES).map(([genre,meta])=>{const draft=newsroomState.reporting.drafts[genre];const selected=selections[genre];const completed=draftCompleted(draft);return `<article class="genre-select-card ${completed?"done":""}"><span>${meta.en}</span><h3>${meta.label}</h3><select name="${genre}"><option value="">选择一个已解锁故事</option>${genreStoryOptions(genre,selected)}</select><p>${selected?`可继续获取：${html(reportingMaterialChannels(reportingStory(selected)).join(" · "))}`:"只显示本组新闻日已经解锁、且可用于该文体的故事。"}</p></article>`;}).join("")}</div><div class="selection-rule"><strong>选题建议：</strong>四篇作品建议覆盖2—3个不同新闻事件；也可以有意识地使用同一事件，比较不同新闻文体的表达差异。系统不再把故事数量作为硬性门槛。</div><div class="reporting-actions"><button type="button" class="secondary-action" data-action="reporting-intro">查看已解锁故事</button><button class="primary-action" type="submit">保存作品计划</button></div></form>${renderReportingDashboard()}<div class="reporting-actions"><span class="progress-copy">四篇作品完成后进入版面选择；后续仍可返回修改。</span><button class="primary-action" data-action="reporting-complete" ${Object.values(newsroomState.reporting.drafts).every(draftCompleted)?"":"disabled"}>四篇完成 · 进入版面编排 →</button></div></div></main>`;
+    app.innerHTML=`${masthead()}<main class="scene reporting-scene"><div class="reporting-wrap">${reportingHeader("四篇作品计划","课堂任务是完成选题、材料采集和核心写作，形成消息一、消息二、新闻特写和评论四篇初稿。课后可以继续返回修改，完善为正式《S城日报》。","STORY CONFERENCE")}${taskHint("为两篇消息、新闻特写和评论选择合适的报道对象。","reportingSelect")}${reportingRule()}<form id="reportingSelectionForm" class="story-selector"><header><div><span class="reporting-kicker">ASSIGNMENT BOARD</span><h2>选择报道方向</h2></div><p>作品完成后仍可修改选题与正文；已获得材料和已消耗的深采机会不会退回。</p></header><div class="genre-selection-grid">${Object.entries(REPORTING_GENRES).map(([genre,meta])=>{const draft=newsroomState.reporting.drafts[genre];const selected=selections[genre];const completed=draftCompleted(draft);return `<article class="genre-select-card ${completed?"done":""}"><span>${meta.en}</span><h3>${meta.label}</h3><select name="${genre}"><option value="">选择一个已解锁故事</option>${genreStoryOptions(genre,selected)}</select><p>${selected?`可继续获取：${html(reportingMaterialChannels(reportingStory(selected)).join(" · "))}`:"只显示本组新闻日已经解锁、且可用于该文体的故事。"}</p></article>`;}).join("")}</div><div class="selection-rule"><strong>选题建议：</strong>两篇消息应该各自回答一个清楚问题；特写聚焦一个真实现场；评论必须建立在事实和材料基础上。</div><div class="reporting-actions"><button type="button" class="secondary-action" data-action="reporting-intro">查看已解锁故事</button><button class="primary-action" type="submit">保存作品计划</button></div></form>${renderReportingDashboard()}<div class="reporting-actions"><span class="progress-copy">四篇作品完成后进入版面选择；后续仍可返回修改。</span><button class="primary-action" data-action="reporting-complete" ${REPORTING_SLOT_KEYS.every(slot=>draftCompleted(newsroomState.reporting.drafts[slot]))?"":"disabled"}>四篇完成 · 进入版面编排 →</button></div></div></main>`;
   }
   function renderStoryFacts(storyId,{limit=0,selectable=false,selectedId=""}={}) {
     let facts=storyEvents(storyId);if(limit)facts=facts.slice(-limit);
@@ -483,36 +508,38 @@
   function renderCompleteness(genre,storyId) {
     const status=reportingCompleteness(genre,storyId);
     let details=[];
-    if(genre==="communication")details=[`人物采访 ${status.interviews}/2`,`背景/数据 ${status.background}/1`,`事实过程 ${status.process?"已形成":"待补"}`];
-    if(genre==="feature")details=[`现场观察 ${status.observations} 项`,`人物跟随 ${status.follow?status.follow.source.name:"待选择"}`];
-    if(genre==="commentary")details=[`事实依据 ${status.factCount}/3`,`不同观点 ${status.viewpoints}/2`,`政策/数据/第三方 ${status.support?"已具备":"待补"}`];
+    const family=slotFamily(genre);
+    if(family==="news")details=[`已发现事实 ${storyEvents(storyId).length} 条`,`报道角度 ${angleText(genre)==="尚未选择报道角度"?"待选择":"已选择"}`];
+    if(family==="feature")details=[`现场观察 ${status.observations} 项`,`人物跟随 ${status.follow?status.follow.source.name:"待选择"}`];
+    if(family==="commentary")details=[`事实依据 ${status.factCount}/3`,`不同观点 ${status.viewpoints}/2`,`政策/数据/第三方 ${status.support?"已具备":"待补"}`];
     return `<section class="completeness ${status.complete?"complete":""}"><b>${status.complete?"✓ 已达到建议写作条件":"建议写作条件提示"}</b><ul>${details.map(item=>`<li>${html(item)}</li>`).join("")}${status.missing.map(item=>`<li>${html(item)}</li>`).join("")}</ul></section>`;
   }
   function reportingActionCard(item,genre) {
     const acquired=newsroomState.reporting.acquiredMaterialIds.includes(item.id);
-    const selected=genre==="feature"&&newsroomState.reporting.featureFollowUp===item.id;
-    const used=genre==="communication"?newsroomState.reporting.communicationActions.length:genre==="commentary"?newsroomState.reporting.commentaryActions.length:newsroomState.reporting.featureFollowUp?1:0;
-    const max=genre==="communication"?4:genre==="commentary"?2:1;
-    const disabled=(!acquired&&used>=max)||(genre==="feature"&&Boolean(newsroomState.reporting.featureFollowUp)&&!selected);
-    return `<article class="material-action ${acquired||selected?"acquired":""}"><span>${materialTypeLabel(item.type)} · ${html(item.sourceTag)}</span><h3>${html(item.actionLabel)}</h3><p>${acquired||selected?html(item.summary||"材料已收入记者素材夹。"):'执行前不显示采访或查询结果；完成后材料才会进入记者素材夹。'}</p><button data-reporting-action="${item.id}" data-reporting-genre="${genre}" ${disabled?"disabled":""}>${selected?"已选择此人物":acquired?"已收入素材夹":item.actionLabel}<small>${genre==="feature"?"人物跟随 1/1":`深采动作 ${used}/${max}`}</small></button></article>`;
+    const family=slotFamily(genre);
+    const selected=family==="feature"&&newsroomState.reporting.featureFollowUp===item.id;
+    const used=family==="news"?newsroomState.reporting.newsActions.length:family==="commentary"?newsroomState.reporting.commentaryActions.length:newsroomState.reporting.featureFollowUp?1:0;
+    const max=family==="news"?4:family==="commentary"?2:1;
+    const disabled=(!acquired&&used>=max)||(family==="feature"&&Boolean(newsroomState.reporting.featureFollowUp)&&!selected);
+    return `<article class="material-action ${acquired||selected?"acquired":""}"><span>${materialTypeLabel(item.type)} · ${html(item.sourceTag)}</span><h3>${html(item.actionLabel)}</h3><p>${acquired||selected?html(item.summary||"材料已收入记者素材夹。"):'执行前不显示采访或查询结果；完成后材料才会进入记者素材夹。'}</p><button data-reporting-action="${item.id}" data-reporting-genre="${genre}" ${disabled?"disabled":""}>${selected?"已选择此人物":acquired?"已收入素材夹":item.actionLabel}<small>${family==="feature"?"人物跟随 1/1":`深采动作 ${used}/${max}`}</small></button></article>`;
   }
   function renderMaterialWorkspace(genre) {
     const storyId=newsroomState.reporting.selectedStories[genre];
     if(!storyId||!isStoryUnlocked(reportingStory(storyId))){toast("请先为这类作品选择一个已解锁故事");go("reportingSelect");return;}
     ensureAutomaticMaterials();saveState();
-    const story=reportingStory(storyId);const status=reportingCompleteness(genre,storyId);
-    let candidates=materialsFor(storyId,genre).filter(item=>!item.autoGenres.includes(genre));
-    if(genre==="feature")candidates=candidates.filter(item=>item.featureFollow);
+    const story=reportingStory(storyId);const status=reportingCompleteness(genre,storyId),family=slotFamily(genre);
+    let candidates=materialsFor(storyId,genre).filter(item=>!item.autoGenres.includes(family));
+    if(family==="feature")candidates=candidates.filter(item=>item.featureFollow);
     const acquired=acquiredMaterials(storyId,genre);
-    const used=genre==="communication"?newsroomState.reporting.communicationActions.length:genre==="commentary"?newsroomState.reporting.commentaryActions.length:newsroomState.reporting.featureFollowUp?1:0;
-    const max=genre==="communication"?4:genre==="commentary"?2:1;
-    app.innerHTML=`${masthead()}<main class="scene reporting-scene"><div class="reporting-wrap">${reportingHeader(`${REPORTING_GENRES[genre].label}采写台`,story.title,REPORTING_GENRES[genre].en)}${reportingRule()}<section class="reporting-workspace"><article class="reporting-column"><header><span>DISCOVERED FACTS</span><h2>新闻日事实</h2><p>只显示本编辑部当天主动发现的相关线索。</p></header><div class="reporting-scroll">${renderStoryFacts(storyId)}</div></article><article class="reporting-column"><header><span>REPORTING ACTIONS</span><h2>${genre==="feature"?"选择一位人物跟随":"主动获取新材料"}</h2><p>${genre==="communication"?"最多4次独立深采动作。":genre==="commentary"?"基础事实与两种观点已放入素材夹；还可深采2项。":"基础现场已放入素材夹；只能选择一位人物继续跟随。"}</p><div class="quota-meter"><b>${used} / ${max}</b><i><span style="width:${used/max*100}%"></span></i></div></header><div class="reporting-scroll">${candidates.map(item=>reportingActionCard(item,genre)).join("")||`<div class="desk-empty">当前没有更多可执行动作。</div>`}</div>${renderCompleteness(genre,storyId)}</article><aside class="reporting-column clipbook"><header><span>REPORTER'S CLIPBOOK</span><h2>记者素材夹</h2><p>来源性质、可引用内容和使用边界均随卡片保存。</p></header><div class="reporting-scroll">${acquired.map(materialCard).join("")||`<div class="desk-empty">执行深采动作后，材料会进入这里。</div>`}</div></aside></section><div class="reporting-actions"><button class="secondary-action" data-action="reporting-select">返回四篇计划</button><button class="primary-action" data-write-genre="${genre}">${draftCompleted(newsroomState.reporting.drafts[genre])?"查看 / 修改作品":status.complete?"进入写作 →":"材料未齐也可先进入写作 →"}</button></div></div></main>`;
+    const used=family==="news"?newsroomState.reporting.newsActions.length:family==="commentary"?newsroomState.reporting.commentaryActions.length:newsroomState.reporting.featureFollowUp?1:0;
+    const max=family==="news"?4:family==="commentary"?2:1;
+    app.innerHTML=`${masthead()}<main class="scene reporting-scene"><div class="reporting-wrap">${reportingHeader(`${REPORTING_GENRES[genre].label}采写台`,story.title,REPORTING_GENRES[genre].en)}${reportingRule()}${renderAngleChooser(genre,storyId)}<section class="reporting-workspace"><article class="reporting-column"><header><span>DISCOVERED FACTS</span><h2>新闻日事实</h2><p>只显示本编辑部当天主动发现的相关线索。</p></header><div class="reporting-scroll">${renderStoryFacts(storyId)}</div></article><article class="reporting-column"><header><span>REPORTING ACTIONS</span><h2>${family==="feature"?"选择一位人物跟随":"主动获取新材料"}</h2><p>${family==="news"?"消息最多可补充4项事实材料。":family==="commentary"?"基础事实与观点材料会进入素材夹；还可深采2项。":"基础现场已放入素材夹；只能选择一位人物继续跟随。"}</p><div class="quota-meter"><b>${used} / ${max}</b><i><span style="width:${used/max*100}%"></span></i></div></header><div class="reporting-scroll">${candidates.map(item=>reportingActionCard(item,genre)).join("")||`<div class="desk-empty">当前没有更多可执行动作。</div>`}</div>${renderCompleteness(genre,storyId)}</article><aside class="reporting-column clipbook"><header><span>REPORTER'S CLIPBOOK</span><h2>记者素材夹</h2><p>来源性质、可引用内容和使用边界均随卡片保存。</p></header><div class="reporting-scroll">${acquired.map(materialCard).join("")||`<div class="desk-empty">执行深采动作后，材料会进入这里。</div>`}</div></aside></section><div class="reporting-actions"><button class="secondary-action" data-action="reporting-select">返回四篇计划</button><button class="primary-action" data-write-genre="${genre}">${draftCompleted(newsroomState.reporting.drafts[genre])?"查看 / 修改作品":status.complete?"进入写作 →":"材料未齐也可先进入写作 →"}</button></div></div></main>`;
   }
   function planningFields(genre,draft) {
     const plan=draft?.planningAnswers||newsroomState.reporting.writingPlans[genre]||{};
-    if(genre==="news")return `<div class="planning-board"><span>LEAD DECISION</span><h3>选择一条导语核心事实</h3><p>从本组实际发现的事实中选择1条你认为最应进入导语的核心事实。系统按时间排序，但“最新”不等于“最重要”。</p>${renderStoryFacts(draft?.storyline||newsroomState.reporting.selectedStories.news,{selectable:true,selectedId:draft?.leadFactId||plan.leadFactId})}</div>`;
-    if(genre==="communication")return `<div class="planning-board"><span>WRITING PLAN</span><h3>通讯写作计划</h3><label>这篇通讯要写清谁与什么事？<textarea name="planFocus">${html(plan.focus||"")}</textarea></label><label>开头准备从哪个场景或人物进入？<textarea name="planOpening">${html(plan.opening||"")}</textarea></label><label>文章最终要回答什么问题？<textarea name="planQuestion">${html(plan.question||"")}</textarea></label></div>`;
-    if(genre==="feature")return `<div class="planning-board"><span>SCENE PLAN</span><h3>新闻特写写作计划</h3><label>你选择聚焦哪个具体时刻？<textarea name="planMoment">${html(plan.moment||"")}</textarea></label><label>哪一项可观察细节将成为文章线索？<textarea name="planDetail">${html(plan.detail||"")}</textarea></label></div>`;
+    const family=slotFamily(genre);
+    if(family==="news")return `<div class="planning-board"><span>LEAD DECISION</span><h3>选择一条导语核心事实</h3><p>从本组实际发现的事实中选择1条你认为最应进入导语的核心事实。系统按时间排序，但“最新”不等于“最重要”。</p><p class="angle-line">这篇文章主要想回答：<b>${html(angleText(genre))}</b></p>${renderStoryFacts(draft?.storyline||newsroomState.reporting.selectedStories[genre],{selectable:true,selectedId:draft?.leadFactId||plan.leadFactId})}</div>`;
+    if(family==="feature")return `<div class="planning-board"><span>SCENE PLAN</span><h3>新闻特写写作计划</h3><p class="angle-line">这篇文章主要想回答：<b>${html(angleText(genre))}</b></p><label>你选择聚焦哪个具体时刻？<textarea name="planMoment">${html(plan.moment||"")}</textarea></label><label>哪一项可观察细节将成为文章线索？<textarea name="planDetail">${html(plan.detail||"")}</textarea></label></div>`;
     const storyId=draft?.storyline||newsroomState.reporting.selectedStories.commentary;
     const facts=storyEvents(storyId);
     const materialFacts=acquiredMaterials(storyId,"commentary").filter(item=>item.factContribution&&!isViewpointMaterial(item));
@@ -523,7 +550,8 @@
   }
   function renderWritingReference(genre,storyId) {
     const materials=acquiredMaterials(storyId,genre);
-    return `<article class="writing-reference"><header><span>${genre==="feature"?"FIELD NOTE":"REPORTER'S CLIPBOOK"}</span><h2>${genre==="news"?"已发现事实":genre==="feature"?"现场笔记与人物":"可用采写材料"}</h2></header><div class="writing-reference-body">${renderStoryFacts(storyId)}${materials.map(materialCard).join("")}</div></article>`;
+    const family=slotFamily(genre);
+    return `<article class="writing-reference"><header><span>${family==="feature"?"FIELD NOTE":"REPORTER'S CLIPBOOK"}</span><h2>${family==="news"?"已发现事实":family==="feature"?"现场笔记与人物":"可用采写材料"}</h2><p class="current-angle">这篇文章主要想回答：<b>${html(angleText(genre))}</b></p></header><div class="writing-reference-body">${renderStoryFacts(storyId)}${materials.map(materialCard).join("")}</div></article>`;
   }
   const FACT_CHECK_ITEMS=["人物均来自采访材料","直接引语没有编造或改变原意","数字与数据均来自现有材料","尚未确认的信息没有被写成确定事实","没有自行补写素材中未出现的人物心理、动作、细节或因果关系"];
   function renderSubmittedDraft(genre,draft) {
@@ -536,9 +564,10 @@
     const meta=REPORTING_GENRES[genre],story=reportingStory(storyId);const saved=draft||{};
     const completed=draftCompleted(saved),checks=saved.factCheck||[];
     const min=Number(meta.limit.split("—")[0]),max=Number(meta.limit.match(/(\d+)字/)[1]);
-    const taskMap={news:"用最重要、最可靠的事实告诉读者发生了什么。",communication:"通过人物、过程和背景，把一件新闻讲得更深入。",feature:"聚焦一个真实现场或瞬间，让读者看见事情是怎样发生的。",commentary:`在事实基础上提出自己的判断，并用材料支撑观点。${termInfo("新闻评论","可以表达观点，但观点必须建立在事实和材料基础上。")}`};
-    app.innerHTML=`${masthead()}<main class="scene writing-scene"><div class="reporting-wrap">${reportingHeader(`${meta.label}写作台`,`${story.title} · 建议篇幅 ${meta.limit} · 课堂形成初稿`,meta.en)}${taskHint(taskMap[genre],genre)}${reportingRule()}<section class="writing-layout">${renderWritingReference(genre,storyId)}<article class="writing-paper"><header><span>WRITING DESK · AUTOSAVE${completed?" · 已完成":""}</span><h2>${completed?"查看 / 修改作品":"完成写作计划、材料选择与核心写作"}</h2><p>所有文字均为选填；本环节先形成课堂初稿，之后仍可返回继续修改完善。</p></header><form id="writingForm" class="writing-form" data-genre="${genre}" novalidate>${planningFields(genre,saved)}<label>文章标题（选填）<input type="text" name="title" maxlength="70" value="${html(saved.title||"")}" placeholder="可留空，系统将显示故事名称"></label><label>正文（选填）<textarea name="body" maxlength="${max}" placeholder="可留空直接推进；正式课堂写作时再完成">${html(saved.body||"")}</textarea></label><div class="word-meter"><span>建议篇幅 ${meta.limit}</span><strong id="writingCount">${wordCount(saved.body||"")} 字</strong></div><section class="fact-check"><span>FACT CHECK · SUBMISSION DECLARATION</span><h3>提交前事实核对</h3>${FACT_CHECK_ITEMS.map((item,index)=>`<label><input type="checkbox" name="factCheck" value="${index+1}" ${checks.includes(String(index+1))?"checked":""}> ${item}</label>`).join("")}</section><p class="draft-status">输入内容会自动保存到本机；保存完成后仍可继续修改。</p><div class="writing-actions"><button type="button" class="secondary-action" data-action="reporting-select">返回四篇作品计划</button><button type="button" class="secondary-action" data-save-draft="${genre}">保存草稿</button><button class="primary-action" type="submit">${completed?"保存修改并继续":"完成并继续"} →</button></div></form></article></section></div></main>`;
-    if(genre==="commentary"){
+    const family=slotFamily(genre);
+    const taskMap={news:"用最重要、最可靠的事实，告诉读者发生了什么。不要从遥远背景写起，先交代最新、重要、已确认的事实；检查5W、最新进展和不确定信息。",feature:"聚焦一个真实现场或瞬间，让读者看见事情是怎样发生的。不要概括整件新闻，优先使用动作、声音、环境、行为和引语；不得编造心理、动作和环境。",commentary:`在事实基础上提出自己的判断，并用材料支撑观点。不要只写“我觉得”，要有事实、观点、依据和需要回应的另一面。${termInfo("新闻评论","可以表达观点，但观点必须建立在事实和材料基础上。")}`};
+    app.innerHTML=`${masthead()}<main class="scene writing-scene"><div class="reporting-wrap">${reportingHeader(`${meta.label}写作台`,`${story.title} · 建议篇幅 ${meta.limit} · 课堂形成初稿`,meta.en)}${taskHint(taskMap[family],family)}${reportingRule()}<section class="writing-layout">${renderWritingReference(genre,storyId)}<article class="writing-paper"><header><span>WRITING DESK · AUTOSAVE${completed?" · 已完成":""}</span><h2>${completed?"查看 / 修改作品":"完成写作计划、材料选择与核心写作"}</h2><p>所有文字均为选填；本环节先形成课堂初稿，之后仍可返回继续修改完善。</p></header><form id="writingForm" class="writing-form" data-genre="${genre}" novalidate>${planningFields(genre,saved)}<label>文章标题（选填）<input type="text" name="title" maxlength="70" value="${html(saved.title||"")}" placeholder="可留空，系统将显示故事名称"></label><label>正文（选填）<textarea name="body" maxlength="${max}" placeholder="可留空直接推进；正式课堂写作时再完成">${html(saved.body||"")}</textarea></label><div class="word-meter"><span>建议篇幅 ${meta.limit}</span><strong id="writingCount">${wordCount(saved.body||"")} 字</strong></div><section class="fact-check"><span>FACT CHECK · SUBMISSION DECLARATION</span><h3>提交前事实核对</h3>${FACT_CHECK_ITEMS.map((item,index)=>`<label><input type="checkbox" name="factCheck" value="${index+1}" ${checks.includes(String(index+1))?"checked":""}> ${item}</label>`).join("")}</section><p class="draft-status">输入内容会自动保存到本机；保存完成后仍可继续修改。</p><div class="writing-actions"><button type="button" class="secondary-action" data-open-genre="${genre}">返回材料与角度</button><button type="button" class="secondary-action" data-action="reporting-select">返回四篇作品计划</button><button type="button" class="secondary-action" data-save-draft="${genre}">保存草稿</button><button class="primary-action" type="submit">${completed?"保存修改并继续":"完成并继续"} →</button></div></form></article></section></div></main>`;
+    if(slotFamily(genre)==="commentary"){
       const plan=saved.planningAnswers||newsroomState.reporting.writingPlans.commentary||{};
       ["fact1Id","fact2Id"].forEach(name=>{const field=$(`[name="${name}"]`);if(field)field.value=plan[name]||"";});
     }
@@ -563,13 +592,13 @@
     if(counter){counter.textContent=`已选 ${finalBriefIds.size} / 建议3—5`;counter.classList.toggle("ready",finalBriefIds.size>=3&&finalBriefIds.size<=5);}
   }
   function renderEdition() {
-    if(!allReportingDraftsSubmitted()){toast("请先完成消息、通讯、特写和评论四篇课堂初稿");go("reportingSelect");return;}
-    const leadCandidates=["news","communication","feature"].map(genre=>[genre,REPORTING_GENRES[genre],newsroomState.reporting.drafts[genre]]);
+    if(!allReportingDraftsSubmitted()){toast("请先完成消息一、消息二、特写和评论四篇课堂初稿");go("reportingSelect");return;}
+    const leadCandidates=["news1","news2","feature"].map(genre=>[genre,REPORTING_GENRES[genre],newsroomState.reporting.drafts[genre]]);
     const edition=newsroomState.finalEdition||{};
-    const selectedLead=edition.leadGenre||"news";
+    const selectedLead=edition.leadGenre||"news1";
     const selectedBriefs=new Set(edition.newsBriefIds||newsroomState.editionBriefIds||[]);
     const discarded=new Map((newsroomState.discardedStories||[]).map(item=>[item.id,item]));
-    app.innerHTML=`${masthead()}<main class="edition-scene"><header><span>THE S CITY DAILY · FINAL EDITION CONFERENCE</span><h1>S城日报 · 最终版面会议</h1><p>${html(newsroomState.newsroomProfile.name||"S城日报城市新闻部")} · ${SIMULATION.date}　四篇主稿已经完成。版面选择可以返回修改，新闻日事实和深采资源不会回退。</p>${taskHint("决定什么上头条、什么做简讯、什么暂时不报道。","edition")}</header><form id="editionForm"><section class="edition-conference"><header><span>LEAD DECISION</span><h2>哪一篇作品放在今天最重要的位置？</h2><p>从消息、通讯、新闻特写中选择1篇作为首页头条。评论固定进入 OPINION 栏目，不作为事实新闻头条。</p></header><div class="lead-work-grid">${leadCandidates.map(([genre,meta,draft])=>`<label class="lead-work-card"><input type="radio" name="leadGenre" value="${genre}" ${selectedLead===genre?"checked":""}><span>${meta.en} · ${meta.label}</span><h3>${html(draftDisplayTitle(genre,draft))}</h3><p>${html(reportingStory(draft.storyline)?.title||"")}</p><small>${wordCount(draft.body)}字 · 已完成</small></label>`).join("")}</div></section>${renderEditionBriefPicker()}<section class="discard-editor"><header><span>EDITORIAL CHOICE</span><h2>我们决定不报道</h2><p>建议至少选择1条没有编入今日简讯的已发现线索，并记录原因；这只是编辑复盘提示，不会阻止发布。</p></header><div class="discard-list">${knownEvents().map(e=>{const item=discarded.get(e.id)||{};return `<label class="discard-row" data-discard-row="${e.id}"><input type="checkbox" name="discard" value="${e.id}" ${discarded.has(e.id)?"checked":""}><span>${html(e.title)}</span><select name="reason-${e.id}">${DISCARD_REASONS.map(r=>`<option ${item.reason===r?"selected":""}>${r}</option>`).join("")}</select><input name="note-${e.id}" value="${html(item.note||"")}" placeholder="补充说明（可选）"></label>`;}).join("")}</div></section><button class="publish-button" type="submit">${newsroomState.finalEdition?"保存修改并更新《S城日报》":"完成版面选择 · 发布《S城日报》"}</button></form></main>`;
+    app.innerHTML=`${masthead()}<main class="edition-scene"><header><span>THE S CITY DAILY · FINAL EDITION CONFERENCE</span><h1>S城日报 · 最终版面会议</h1><p>${html(newsroomState.newsroomProfile.name||"S城日报城市新闻部")} · ${SIMULATION.date}　四篇主稿已经完成。版面选择可以返回修改，新闻日事实和深采资源不会回退。</p>${taskHint("决定什么上头条、什么做简讯、什么暂时不报道。","edition")}</header><form id="editionForm"><section class="edition-conference"><header><span>LEAD DECISION</span><h2>哪一篇作品放在今天最重要的位置？</h2><p>从消息一、消息二、新闻特写中选择1篇作为首页头条。评论固定进入 OPINION 栏目，不作为事实新闻头条。</p></header><div class="lead-work-grid">${leadCandidates.map(([genre,meta,draft])=>`<label class="lead-work-card"><input type="radio" name="leadGenre" value="${genre}" ${selectedLead===genre?"checked":""}><span>${meta.en} · ${meta.label}</span><h3>${html(draftDisplayTitle(genre,draft))}</h3><p>${html(reportingStory(draft.storyline)?.title||"")}</p><small>${wordCount(draft.body)}字 · 已完成</small></label>`).join("")}</div></section>${renderEditionBriefPicker()}<section class="discard-editor"><header><span>EDITORIAL CHOICE</span><h2>我们决定不报道</h2><p>建议至少选择1条没有编入今日简讯的已发现线索，并记录原因；这只是编辑复盘提示，不会阻止发布。</p></header><div class="discard-list">${knownEvents().map(e=>{const item=discarded.get(e.id)||{};return `<label class="discard-row" data-discard-row="${e.id}"><input type="checkbox" name="discard" value="${e.id}" ${discarded.has(e.id)?"checked":""}><span>${html(e.title)}</span><select name="reason-${e.id}">${DISCARD_REASONS.map(r=>`<option ${item.reason===r?"selected":""}>${r}</option>`).join("")}</select><input name="note-${e.id}" value="${html(item.note||"")}" placeholder="补充说明（可选）"></label>`;}).join("")}</div></section><button class="publish-button" type="submit">${newsroomState.finalEdition?"保存修改并更新《S城日报》":"完成版面选择 · 发布《S城日报》"}</button></form></main>`;
     $("#editionForm")?.querySelectorAll('input[name="editionBrief"]').forEach(input=>{input.checked=selectedBriefs.has(input.value);});
     syncEditionSelections();
   }
@@ -678,7 +707,7 @@
     const government=briefEvents.filter(event=>publishedSectionLabel(event)==="政务").slice(0,3);
     const national=briefEvents.filter(event=>publishedSectionLabel(event)==="全国");
     const world=briefEvents.filter(event=>publishedSectionLabel(event)==="国际");
-    const hasReporting=Object.values(newsroomState.reporting.drafts).some(draftCompleted);
+    const hasReporting=REPORTING_SLOT_KEYS.some(slot=>draftCompleted(newsroomState.reporting.drafts[slot]));
     const leadGenre=isReportingEdition()?newsroomState.finalEdition.leadGenre:null;
     const genreNav=hasReporting?Object.entries(REPORTING_GENRES).filter(([genre])=>draftCompleted(newsroomState.reporting.drafts[genre])&&genre!==leadGenre).map(([genre,meta])=>`<a href="#published-${genre}">${meta.label}</a>`).join(""):"";
     const sectionNav=[city.length?`<a href="#published-city">S城</a>`:"",government.length?`<a href="#published-government">政务</a>`:"",(briefEvents.some(event=>publishedSectionLabel(event)==="财经")||newsroomState.discoveredLocations.some(id=>locationById(id)?.entryType==="market"))?`<a href="#published-markets">财经</a>`:"",national.length?`<a href="#published-national">全国</a>`:"",world.length?`<a href="#published-world">国际</a>`:""].join("");
@@ -702,7 +731,7 @@
       : `<article><b>HEADLINE</b><p>${html(edition?.headline?.title||"—")}</p></article>${(edition?.briefs||[]).map((item,index)=>`<article><b>TOP STORY 0${index+1}</b><p>${html(item.title)}</p></article>`).join("")}`;
     const editionSummary=isReportingEdition(edition)?"四篇课堂初稿进入版面；版面选择可继续修改。":"3篇主笔报道";
     const legacy=versions.length?`<section class="legacy-bulletin-review"><span>旧版午间快讯记录</span><h2>兼容旧流程数据</h2>${versions.map((v,i)=>`<article class="version-card"><b>V${i+1} · ${{original:"原始版本",updated:"更新报道",corrected:"发布更正"}[v.type]}</b><h3>${html(v.title)}</h3><p>${html(v.lead)}</p><small>${v.time}｜${html(v.source)}</small></article>`).join("")}</section>`:"";
-    app.innerHTML=`${masthead()}<main class="review-scene"><header><span>NEWSROOM ARCHIVE · ${SIMULATION.date}</span><h1>专题复盘 / 今日编辑部档案</h1><p>${html(profile.name||"S城日报城市新闻部")} · 回看一天中，证据如何改变判断，选择如何形成版面。</p></header>${renderFinalReflection()}<div class="review-timeline">${snapshotBlock("B · 09:00",newsroomState.meeting1Snapshot)}${snapshotBlock("C · 13:00",newsroomState.meeting2Snapshot)}${publicationDecisionBlock()}<section class="review-block"><time>E</time><div><span>调查记录</span><h2>全天使用 ${newsroomState.investigationHistory.length} / 8 次采访机会</h2>${newsroomState.investigationHistory.map(h=>`<p>${h.time}　${html(h.action)} → ${html(eventById(h.eventId)?.title||"")}</p>`).join("")||"<p>未执行主动调查。</p>"}</div></section><section class="review-block"><time>F</time><div class="edition-review"><span>四篇作品计划与初稿</span><h2>消息 / 通讯 / 特写 / 评论</h2><div class="authored-review">${Object.entries(REPORTING_GENRES).map(([genre,meta])=>{const draft=reporting.drafts[genre],story=reportingStory(reporting.selectedStories[genre]);return `<article><b>${meta.en} · ${meta.label}</b><p>${draftCompleted(draft)?html(draftDisplayTitle(genre,draft)):"未完成"}</p><small>${story?html(story.title):"未选择故事"} · 采用材料 ${draft?.selectedMaterialIds?.length||0} 份</small></article>`;}).join("")}</div></div></section><section class="review-block edition-choice-review"><time>G</time><div class="edition-review"><span>最终版面选择</span><h2>${html(profile.name||"S城日报城市新闻部")}</h2>${renderNewsroomMembers("review-newsroom-members")}<p>${editionSummary}</p><div class="authored-review">${authored}</div><div class="edition-review-summary"><strong>额外编入简讯：${getPublishedBriefEvents().length}条</strong>${Object.entries(categoryCounts).map(([label,count])=>`<span>${label} <b>${count}</b></span>`).join("")}</div></div></section><section class="review-block"><time>H</time><div><span>未刊发选择</span><h2>我们决定不报道</h2>${newsroomState.discardedStories.map(d=>`<p>${html(eventById(d.id)?.title||"")}｜${html(d.reason)}${d.note?`：${html(d.note)}`:""}</p>`).join("")||"<p>未记录不报道线索。</p>"}</div></section></div><section class="status-review"><span>EDITORIAL STATUS HISTORY</span><h2>线索判断变化</h2><div>${Object.entries(newsroomState.statusHistory).map(([id,history])=>`<article><h3>${html(eventById(id)?.title||"")}</h3><p>${history.map(h=>`${EDITORIAL_STATUS[h.status]?.symbol||""}${EDITORIAL_STATUS[h.status]?.label||h.status}`).join(" → ")}${isLeadEvent(id)?" → HEADLINE":""}</p></article>`).join("")}</div></section>${legacy}<footer><button class="secondary-action" data-action="published">返回最终版面</button><button class="danger-button" data-action="reset">重新开始新闻日</button></footer></main>`;
+    app.innerHTML=`${masthead()}<main class="review-scene"><header><span>NEWSROOM ARCHIVE · ${SIMULATION.date}</span><h1>专题复盘 / 今日编辑部档案</h1><p>${html(profile.name||"S城日报城市新闻部")} · 回看一天中，证据如何改变判断，选择如何形成版面。</p></header>${renderFinalReflection()}<div class="review-timeline">${snapshotBlock("B · 09:00",newsroomState.meeting1Snapshot)}${snapshotBlock("C · 13:00",newsroomState.meeting2Snapshot)}${publicationDecisionBlock()}<section class="review-block"><time>E</time><div><span>调查记录</span><h2>全天使用 ${newsroomState.investigationHistory.length} / 8 次采访机会</h2>${newsroomState.investigationHistory.map(h=>`<p>${h.time}　${html(h.action)} → ${html(eventById(h.eventId)?.title||"")}</p>`).join("")||"<p>未执行主动调查。</p>"}</div></section><section class="review-block"><time>F</time><div class="edition-review"><span>四篇作品计划与初稿</span><h2>消息一 / 消息二 / 特写 / 评论</h2><div class="authored-review">${Object.entries(REPORTING_GENRES).map(([genre,meta])=>{const draft=reporting.drafts[genre],story=reportingStory(reporting.selectedStories[genre]);return `<article><b>${meta.en} · ${meta.label}</b><p>${draftCompleted(draft)?html(draftDisplayTitle(genre,draft)):"未完成"}</p><small>${story?html(story.title):"未选择故事"} · 采用材料 ${draft?.selectedMaterialIds?.length||0} 份</small></article>`;}).join("")}</div></div></section><section class="review-block edition-choice-review"><time>G</time><div class="edition-review"><span>最终版面选择</span><h2>${html(profile.name||"S城日报城市新闻部")}</h2>${renderNewsroomMembers("review-newsroom-members")}<p>${editionSummary}</p><div class="authored-review">${authored}</div><div class="edition-review-summary"><strong>额外编入简讯：${getPublishedBriefEvents().length}条</strong>${Object.entries(categoryCounts).map(([label,count])=>`<span>${label} <b>${count}</b></span>`).join("")}</div></div></section><section class="review-block"><time>H</time><div><span>未刊发选择</span><h2>我们决定不报道</h2>${newsroomState.discardedStories.map(d=>`<p>${html(eventById(d.id)?.title||"")}｜${html(d.reason)}${d.note?`：${html(d.note)}`:""}</p>`).join("")||"<p>未记录不报道线索。</p>"}</div></section></div><section class="status-review"><span>EDITORIAL STATUS HISTORY</span><h2>线索判断变化</h2><div>${Object.entries(newsroomState.statusHistory).map(([id,history])=>`<article><h3>${html(eventById(id)?.title||"")}</h3><p>${history.map(h=>`${EDITORIAL_STATUS[h.status]?.symbol||""}${EDITORIAL_STATUS[h.status]?.label||h.status}`).join(" → ")}${isLeadEvent(id)?" → HEADLINE":""}</p></article>`).join("")}</div></section>${legacy}<footer><button class="secondary-action" data-action="published">返回最终版面</button><button class="danger-button" data-action="reset">重新开始新闻日</button></footer></main>`;
   }
   function appendReportingReview() {
     const target=$(".edition-choice-review")||$(".status-review");if(!target)return;
@@ -710,14 +739,14 @@
     const unlocked=reporting.unlockedStoryIds.map(reportingStory).filter(Boolean);
     const featureFollow=reportingMaterial(reporting.featureFollowUp);
     const section=document.createElement("section");section.className="reporting-review";
-    section.innerHTML=`<span>S CITY REPORTING ROOM · ARCHIVE</span><h2>采写室工作档案</h2><p>记录本组从已发现线索中解锁、深采、组织并完成四类作品的过程，不进行分数或等级评价。</p><div class="reporting-review-details"><b>解锁故事：</b>${unlocked.map(story=>html(story.title)).join("；")||"无"}<br><b>通讯深采：</b>${reporting.communicationActions.map(id=>html(reportingMaterial(id)?.title||id)).join("；")||"未执行"}<br><b>特写现场：</b>${reporting.selectedStories.feature?html(reportingStory(reporting.selectedStories.feature)?.title||""):"未选择"}；<b>跟随人物：</b>${featureFollow?html(featureFollow.source.name):"未选择"}<br><b>评论深采：</b>${reporting.commentaryActions.map(id=>html(reportingMaterial(id)?.title||id)).join("；")||"未执行"}</div><div class="reporting-review-grid">${Object.entries(REPORTING_GENRES).map(([genre,meta])=>{const draft=reporting.drafts[genre],story=reportingStory(reporting.selectedStories[genre]);return `<article><span>${meta.en}</span><h3>${draftCompleted(draft)?html(draftDisplayTitle(genre,draft)):"未完成"}</h3><p>${story?html(story.title):"未选择故事"}</p><p>采用材料 ${draft?.selectedMaterialIds?.length||0} 份</p></article>`;}).join("")}</div><p class="reporting-review-details">采写路径：发现事实 → 选择故事 → 补充材料 → 形成计划 → 写作核对 → 出版归档。</p>`;
+    section.innerHTML=`<span>S CITY REPORTING ROOM · ARCHIVE</span><h2>采写室工作档案</h2><p>记录本组从已发现线索中解锁、深采、组织并完成四类作品的过程，不进行分数或等级评价。</p><div class="reporting-review-details"><b>解锁故事：</b>${unlocked.map(story=>html(story.title)).join("；")||"无"}<br><b>消息材料：</b>${reporting.newsActions.map(id=>html(reportingMaterial(id)?.title||id)).join("；")||"未执行"}<br><b>特写现场：</b>${reporting.selectedStories.feature?html(reportingStory(reporting.selectedStories.feature)?.title||""):"未选择"}；<b>跟随人物：</b>${featureFollow?html(featureFollow.source.name):"未选择"}<br><b>评论深采：</b>${reporting.commentaryActions.map(id=>html(reportingMaterial(id)?.title||id)).join("；")||"未执行"}</div><div class="reporting-review-grid">${Object.entries(REPORTING_GENRES).map(([genre,meta])=>{const draft=reporting.drafts[genre],story=reportingStory(reporting.selectedStories[genre]);return `<article><span>${meta.en}</span><h3>${draftCompleted(draft)?html(draftDisplayTitle(genre,draft)):"未完成"}</h3><p>${story?html(story.title):"未选择故事"}</p><p>采用材料 ${draft?.selectedMaterialIds?.length||0} 份</p></article>`;}).join("")}</div><p class="reporting-review-details">采写路径：发现事实 → 选择故事 → 补充材料 → 形成计划 → 写作核对 → 出版归档。</p>`;
     target.before(section);
   }
   function appendDeskReview() { const target=$(".status-review");if(!target)return;const counts=Object.keys(DESKS).map(key=>({key,count:knownEvents().filter(event=>event.desk===key).length,opens:newsroomState.deskOpenCounts[key]||0}));const section=document.createElement("section");section.className="desk-review";section.innerHTML=`<span>DESK ATTENTION</span><h2>本组关注分布</h2><p>仅记录信息选择，不进行评分。</p><div>${counts.map(item=>`<article><b>${DESKS[item.key].code}</b><strong>${item.count} 条</strong><small>打开 ${item.opens} 次</small></article>`).join("")}</div>`;target.before(section); }
 
   function render() {
     const scene=newsroomState.currentScene;
-    if(scene==="cover")renderCover(); else if(scene==="briefing")renderBriefing(); else if(/^round/.test(scene))renderDesk(); else if(scene==="meeting1")renderMeeting(1); else if(scene==="transition2")renderTransition(2); else if(scene==="meeting2")renderMeeting(2); else if(scene==="publicationDecision"||scene==="midday")renderPublicationDecision(); else if(scene==="bulletinVersion")renderBulletinVersion(); else if(scene==="transition3")renderTransition(3); else if(scene==="deadline")renderDeadline(); else if(scene==="reportingIntro")renderReportingIntro(); else if(scene==="reportingSelect")renderReportingSelect(); else if(scene==="reportingCommunication")renderMaterialWorkspace("communication"); else if(scene==="reportingFeature")renderMaterialWorkspace("feature"); else if(scene==="reportingCommentary")renderMaterialWorkspace("commentary"); else if(scene==="writingNews")renderWriting("news"); else if(scene==="writingCommunication")renderWriting("communication"); else if(scene==="writingFeature")renderWriting("feature"); else if(scene==="writingCommentary")renderWriting("commentary"); else if(scene==="edition")renderEdition(); else if(scene==="published")renderPublished(); else if(scene==="review"){renderReview();appendDeskReview();appendReportingReview();} else {newsroomState.currentScene="cover";saveState();renderCover();}
+    if(scene==="cover")renderCover(); else if(scene==="briefing")renderBriefing(); else if(/^round/.test(scene))renderDesk(); else if(scene==="meeting1")renderMeeting(1); else if(scene==="transition2")renderTransition(2); else if(scene==="meeting2")renderMeeting(2); else if(scene==="publicationDecision"||scene==="midday")renderPublicationDecision(); else if(scene==="bulletinVersion")renderBulletinVersion(); else if(scene==="transition3")renderTransition(3); else if(scene==="deadline")renderDeadline(); else if(scene==="reportingIntro")renderReportingIntro(); else if(scene==="reportingSelect")renderReportingSelect(); else if(scene==="reportingNews1"||scene==="reportingCommunication")renderMaterialWorkspace("news1"); else if(scene==="reportingNews2")renderMaterialWorkspace("news2"); else if(scene==="reportingFeature")renderMaterialWorkspace("feature"); else if(scene==="reportingCommentary")renderMaterialWorkspace("commentary"); else if(scene==="writingNews1"||scene==="writingNews")renderWriting("news1"); else if(scene==="writingNews2")renderWriting("news2"); else if(scene==="writingCommunication")renderWriting("news1"); else if(scene==="writingFeature")renderWriting("feature"); else if(scene==="writingCommentary")renderWriting("commentary"); else if(scene==="edition")renderEdition(); else if(scene==="published")renderPublished(); else if(scene==="review"){renderReview();appendDeskReview();appendReportingReview();} else {newsroomState.currentScene="cover";saveState();renderCover();}
     appendBackButton();
     appendClearRecordsButton();
     renderTeacherActions();
@@ -829,7 +858,7 @@
   }
   function submitEdition(form) {
     if(!allReportingDraftsSubmitted()){toast("请先完成四篇课堂初稿");return;}
-    const leadGenre=form.elements.leadGenre?.value||["news","communication","feature"].find(genre=>draftCompleted(newsroomState.reporting.drafts[genre]));
+    const leadGenre=form.elements.leadGenre?.value||["news1","news2","feature"].find(genre=>draftCompleted(newsroomState.reporting.drafts[genre]));
     const newsBriefIds=[...form.querySelectorAll('input[name="editionBrief"]:checked')].map(input=>input.value);
     if(newsBriefIds.some(id=>!newsroomState.discoveredEvents.includes(id))){toast("今日简讯只能使用本组已经发现的线索");return;}
     const discards=[...form.querySelectorAll('input[name="discard"]:checked')].map(input=>({id:input.value,reason:form.elements[`reason-${input.value}`].value,note:form.elements[`note-${input.value}`].value.trim()}));
@@ -845,18 +874,18 @@
   }
   function submitReportingSelection(form) {
     const formData=new FormData(form);const next={};
-    Object.keys(REPORTING_GENRES).forEach(genre=>{next[genre]=formData.get(genre)||newsroomState.reporting.selectedStories[genre]||null;});
+    REPORTING_SLOT_KEYS.forEach(genre=>{next[genre]=formData.get(genre)||newsroomState.reporting.selectedStories[genre]||null;});
     for(const [genre,storyId] of Object.entries(next)){
       const story=reportingStory(storyId);
-      if(!story||!isStoryUnlocked(story)||!story.genres.includes(genre)){toast(`请为“${REPORTING_GENRES[genre].label}”选择一个已解锁故事`);return;}
+      if(!story||!isStoryUnlocked(story)||!story.genres.includes(slotFamily(genre))){toast(`请为“${REPORTING_GENRES[genre].label}”选择一个已解锁故事`);return;}
     }
     const ids=Object.values(next);const unique=new Set(ids);
     const changedGenres=Object.keys(next).filter(genre=>newsroomState.reporting.selectedStories[genre]&&newsroomState.reporting.selectedStories[genre]!==next[genre]&&newsroomState.reporting.drafts[genre]);
     if(changedGenres.length&&!confirm("更换报道对象后，对应文体的当前写作内容将清空。\n已经获得的采访材料不会消失，已经消耗的深采机会不会退回。\n是否继续？"))return;
-    for(const genre of Object.keys(next)){
+    for(const genre of REPORTING_SLOT_KEYS){
       const previous=newsroomState.reporting.selectedStories[genre];
       if(previous&&previous!==next[genre]){
-        newsroomState.reporting.drafts[genre]=null;newsroomState.reporting.writingPlans[genre]={};
+        newsroomState.reporting.drafts[genre]=null;newsroomState.reporting.writingPlans[genre]={};newsroomState.reporting.selectedAngles[genre]=null;newsroomState.reporting.customAngles[genre]="";
       }
       newsroomState.reporting.selectedStories[genre]=next[genre];
     }
@@ -864,13 +893,14 @@
   }
   function performReportingAction(id,genre) {
     const item=reportingMaterial(id),storyId=newsroomState.reporting.selectedStories[genre];
-    if(!item||item.storyline!==storyId||!item.genres.includes(genre)){toast("这项材料不属于当前采写任务");return;}
-    if(genre==="feature"){
+    const family=slotFamily(genre);
+    if(!item||item.storyline!==storyId||!item.genres.includes(family)){toast("这项材料不属于当前采写任务");return;}
+    if(family==="feature"){
       if(newsroomState.reporting.featureFollowUp&&newsroomState.reporting.featureFollowUp!==id){toast("新闻特写只能选择一位人物跟随");return;}
       newsroomState.reporting.featureFollowUp=id;
     } else {
-      const key=genre==="communication"?"communicationActions":"commentaryActions";
-      const max=genre==="communication"?4:2;
+      const key=family==="news"?"newsActions":"commentaryActions";
+      const max=family==="news"?4:2;
       if(!newsroomState.reporting[key].includes(id)){
         if(newsroomState.reporting[key].length>=max){toast(`本类作品最多执行 ${max} 次主动深采`);return;}
         newsroomState.reporting[key].push(id);
@@ -880,15 +910,15 @@
   }
   function selectedMaterialIdsForDraft(genre,storyId) {
     const items=acquiredMaterials(storyId,genre);
-    if(genre==="news")return[];
-    if(genre==="feature")return items.filter(item=>item.autoGenres.includes("feature")||item.id===newsroomState.reporting.featureFollowUp).map(item=>item.id);
+    const family=slotFamily(genre);
+    if(family==="feature")return items.filter(item=>item.autoGenres.includes("feature")||item.id===newsroomState.reporting.featureFollowUp).map(item=>item.id);
     return items.map(item=>item.id);
   }
   function writingPlanFromForm(form,genre) {
     const value=name=>form.elements[name]?.value?.trim?.()||"";
-    if(genre==="news")return{leadFactId:value("leadFactId")};
-    if(genre==="communication")return{focus:value("planFocus"),opening:value("planOpening"),question:value("planQuestion")};
-    if(genre==="feature")return{moment:value("planMoment"),detail:value("planDetail")};
+    const family=slotFamily(genre);
+    if(family==="news")return{leadFactId:value("leadFactId")};
+    if(family==="feature")return{moment:value("planMoment"),detail:value("planDetail")};
     return{stance:value("planStance"),fact1Id:value("fact1Id"),fact2Id:value("fact2Id"),counterViewpointId:value("counterViewpointId"),skeleton:value("planSkeleton")};
   }
   function saveWritingDraft(form,{submitted=false,quiet=false}={}) {
@@ -898,8 +928,8 @@
     const storyId=newsroomState.reporting.selectedStories[genre],plan=writingPlanFromForm(form,genre);
     const checks=[...form.querySelectorAll('input[name="factCheck"]:checked')].map(input=>input.value);
     const draft={...previous,genre,storyline:storyId,title:form.elements.title?.value.trim()||"",body:form.elements.body?.value||"",selectedMaterialIds:selectedMaterialIdsForDraft(genre,storyId),planningAnswers:plan,savedAt:new Date().toISOString(),submitted:completed,completed, factCheck:checks};
-    if(genre==="news")draft.leadFactId=plan.leadFactId;
-    if(genre==="commentary"){draft.stance=plan.stance;draft.counterViewpointId=plan.counterViewpointId;}
+    if(slotFamily(genre)==="news")draft.leadFactId=plan.leadFactId;
+    if(slotFamily(genre)==="commentary"){draft.stance=plan.stance;draft.counterViewpointId=plan.counterViewpointId;}
     if(submitted&&!draft.submittedAt)draft.submittedAt=new Date().toISOString();
     if(completed&&draft.submittedAt)draft.updatedAt=new Date().toISOString();
     newsroomState.reporting.writingPlans[genre]=plan;newsroomState.reporting.drafts[genre]=draft;saveState();
@@ -932,8 +962,12 @@
     const openGenre=event.target.closest("[data-open-genre]")?.dataset.openGenre;
     const writeGenre=event.target.closest("[data-write-genre]")?.dataset.writeGenre;
     const saveDraftButton=event.target.closest("[data-save-draft]");
-    if(action==="back"){goBack();return;} if(action==="print"){window.print();return;} if(resumeScene){go(resumeScene);return;} if(reportingAction){performReportingAction(reportingAction.dataset.reportingAction,reportingAction.dataset.reportingGenre);return;} if(openGenre){go(reportingSceneFor(openGenre,openGenre==="news"));return;} if(writeGenre){go(reportingSceneFor(writeGenre,true));return;} if(saveDraftButton){const form=saveDraftButton.closest("form");if(form)saveWritingDraft(form);return;} if(desk){openDesk(desk);return;} if(wireFilter){newsroomState.wireFilter=wireFilter;saveState();renderDesk();return;} if(wireTab){newsroomState.wireTab=wireTab;saveState();renderDesk();return;} if(location&&!wire){handleMapClick(location);return;} if(wire){const selected=eventById(wire.dataset.event);newsroomState.selectedLocation=wire.dataset.location;newsroomState.selectedEvent=wire.dataset.event;if(selected?.desk)newsroomState.currentDesk=selected.desk;saveState();renderDesk();return;} if(investigation){investigate(investigation);return;} if(statusButton){changeEditorial(statusButton.dataset.id,statusButton.dataset.status);return;}
-    if(action==="enter-briefing")go("briefing"); if(action==="start-round1"){grantRound(1);go("round1");} if(action==="meeting1")go("meeting1"); if(action==="meeting2")go("meeting2"); if(action==="enter-round"){const round=Number(event.target.closest("[data-round]").dataset.round);grantRound(round);go(`round${round}`);} if(action==="deadline"){attemptDeadline();} if(action==="reporting-intro")go("reportingIntro"); if(action==="reporting-select")go("reportingSelect"); if(action==="reporting-complete"){if(!Object.values(newsroomState.reporting.drafts).every(draftCompleted)){toast("请先完成四篇作品");return;}go(newsroomState.finalEdition?"published":"edition");} if(action==="edition")go("edition"); if(action==="bulletin-version")go("bulletinVersion"); if(action==="review")go("review"); if(action==="published")go("published"); if(action==="reset")resetDay();
+    const angleButton=event.target.closest("[data-angle-card]");
+    const customAngleButton=event.target.closest("[data-save-custom-angle]");
+    if(angleButton){const genre=angleButton.dataset.angleGenre;newsroomState.reporting.selectedAngles[genre]=angleButton.dataset.angleCard;saveState();renderMaterialWorkspace(genre);return;}
+    if(customAngleButton){const genre=customAngleButton.dataset.saveCustomAngle;const textarea=$(`[data-custom-angle="${genre}"]`);newsroomState.reporting.selectedAngles[genre]="custom";newsroomState.reporting.customAngles[genre]=textarea?.value.trim()||"";saveState();renderMaterialWorkspace(genre);return;}
+    if(action==="back"){goBack();return;} if(action==="print"){window.print();return;} if(resumeScene){go(resumeScene);return;} if(reportingAction){performReportingAction(reportingAction.dataset.reportingAction,reportingAction.dataset.reportingGenre);return;} if(openGenre){go(reportingSceneFor(openGenre,false));return;} if(writeGenre){go(reportingSceneFor(writeGenre,true));return;} if(saveDraftButton){const form=saveDraftButton.closest("form");if(form)saveWritingDraft(form);return;} if(desk){openDesk(desk);return;} if(wireFilter){newsroomState.wireFilter=wireFilter;saveState();renderDesk();return;} if(wireTab){newsroomState.wireTab=wireTab;saveState();renderDesk();return;} if(location&&!wire){handleMapClick(location);return;} if(wire){const selected=eventById(wire.dataset.event);newsroomState.selectedLocation=wire.dataset.location;newsroomState.selectedEvent=wire.dataset.event;if(selected?.desk)newsroomState.currentDesk=selected.desk;saveState();renderDesk();return;} if(investigation){investigate(investigation);return;} if(statusButton){changeEditorial(statusButton.dataset.id,statusButton.dataset.status);return;}
+    if(action==="enter-briefing")go("briefing"); if(action==="start-round1"){grantRound(1);go("round1");} if(action==="meeting1")go("meeting1"); if(action==="meeting2")go("meeting2"); if(action==="enter-round"){const round=Number(event.target.closest("[data-round]").dataset.round);grantRound(round);go(`round${round}`);} if(action==="deadline"){attemptDeadline();} if(action==="reporting-intro")go("reportingIntro"); if(action==="reporting-select")go("reportingSelect"); if(action==="reporting-complete"){if(!REPORTING_SLOT_KEYS.every(slot=>draftCompleted(newsroomState.reporting.drafts[slot]))){toast("请先完成四篇作品");return;}go(newsroomState.finalEdition?"published":"edition");} if(action==="edition")go("edition"); if(action==="bulletin-version")go("bulletinVersion"); if(action==="review")go("review"); if(action==="published")go("published"); if(action==="reset")resetDay();
   });
   app.addEventListener("change",event=>{if(event.target.name==="tracks")updateHeadlineChoices();if(event.target.name==="changed")$("#changeEvidence").hidden=event.target.value!=="yes";if(event.target.name==="headlineEvent"){const selected=eventById(event.target.value);const related=selected?knownEvents().filter(e=>e.storyline===selected.storyline):[];const sourceCount=independentSourceCount(related);const warning=$("#sourceWarning");if(warning)warning.textContent=sourceCount<2?"当前同方向信息仍主要来自单一来源，请继续核实。":`当前同方向信息涉及 ${sourceCount} 个不同来源；仍请判断这些来源是否真正独立。`;}if(["headlineEvent","brief1Event","brief2Event","editionBrief","discard"].includes(event.target.name))syncEditionSelections();const writingForm=event.target.closest("#writingForm");if(writingForm)queueWritingAutosave(writingForm);});
   app.addEventListener("input",event=>{if(event.target.name==="headlineBody")event.target.parentElement.querySelector(".char-count").textContent=`${event.target.value.length} / 150—250`;const writingForm=event.target.closest("#writingForm");if(writingForm){const counter=$("#writingCount");if(counter&&event.target.name==="body")counter.textContent=`${wordCount(event.target.value)} 字`;queueWritingAutosave(writingForm);}});

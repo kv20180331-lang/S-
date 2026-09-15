@@ -5,24 +5,81 @@
  */
 
 const REPORTING_GENRES = {
-  news: { label: "消息", en: "TODAY'S NEWS", limit: "300—450字" },
-  communication: { label: "通讯", en: "IN DEPTH", limit: "700—1000字" },
-  feature: { label: "新闻特写", en: "SCENE", limit: "500—700字" },
-  commentary: { label: "评论", en: "OPINION", limit: "600—800字" }
+  news1: { family: "news", label: "消息一", en: "NEWS 01", limit: "300—450字" },
+  news2: { family: "news", label: "消息二", en: "NEWS 02", limit: "300—450字" },
+  feature: { family: "feature", label: "新闻特写", en: "SCENE", limit: "500—700字" },
+  commentary: { family: "commentary", label: "评论", en: "OPINION", limit: "600—800字" }
 };
 
 const REPORTING_STORIES = [
-  {id:"elevator",title:"东城家园电梯停运",unlock:{any:["03"]},eventIds:["03","13","27"],genres:["communication","feature","commentary"],directions:["居民采访","物业与维保回应","背景资料","现场观察"]},
-  {id:"school",title:"第三中学停课信息",unlock:{any:["05","16"]},eventIds:["05","16","18","29"],genres:["news","communication","feature","commentary"],directions:["师生与家长采访","校园规则","礼堂现场","不同观点"]},
-  {id:"mountain",title:"山海景区游客转移",unlock:{any:["MT01","MT02"]},eventIds:["MT01","MT02"],genres:["news","communication","feature"],directions:["游客与救援人员采访","救援记录","线路资料","现场观察"]},
-  {id:"port_rain",title:"暴雨中的深东港",unlock:{any:["P02"]},eventIds:["P02","P03"],genres:["communication","feature"],directions:["司机与调度采访","操作员采访","调度数据","港区现场"]},
-  {id:"robot",title:"配送机器人测试",unlock:{any:["07"]},eventIds:["07","19","T03","G1","G2"],genres:["news","communication","commentary"],directions:["企业与工作人员采访","测试数据","政策资料","不同观点"]},
-  {id:"rain",title:"S城强降雨",unlock:{storyline:"rain",minimum:3,minimumLocations:3},eventStoryline:"rain",genres:["news","communication","commentary"],directions:["气象与应急采访","跨地点时间线","城市运行资料","不同观点"]},
+  {id:"elevator",title:"东城家园电梯停运",unlock:{any:["03"]},eventIds:["03","13","27"],genres:["news","feature","commentary"],directions:["居民采访","物业与维保回应","背景资料","现场观察"]},
+  {id:"school",title:"第三中学停课信息",unlock:{any:["05","16"]},eventIds:["05","16","18","29"],genres:["news","feature","commentary"],directions:["师生与家长采访","校园规则","礼堂现场","不同观点"]},
+  {id:"mountain",title:"山海景区游客转移",unlock:{any:["MT01","MT02"]},eventIds:["MT01","MT02"],genres:["news","feature"],directions:["游客与救援人员采访","救援记录","线路资料","现场观察"]},
+  {id:"port_rain",title:"暴雨中的深东港",unlock:{any:["P02"]},eventIds:["P02","P03"],genres:["news","feature"],directions:["司机与调度采访","操作员采访","调度数据","港区现场"]},
+  {id:"robot",title:"配送机器人测试",unlock:{any:["07"]},eventIds:["07","19","T03","G1","G2"],genres:["news","commentary"],directions:["企业与工作人员采访","测试数据","政策资料","不同观点"]},
+  {id:"rain",title:"S城强降雨",unlock:{storyline:"rain",minimum:3,minimumLocations:3},eventStoryline:"rain",genres:["news","commentary"],directions:["气象与应急采访","跨地点时间线","城市运行资料","不同观点"]},
   {id:"metro_rain",title:"地铁B口积水",unlock:{any:["20"]},eventIds:["02","20","30"],genres:["news","feature"],directions:["现场笔记","人物跟随"]},
   {id:"celebrity",title:"明星现身传言",unlock:{any:["06"]},eventIds:["06","23"],genres:["news","commentary"],directions:["传播记录","转发者与现场采访","媒介观点"]},
   {id:"nightmarket",title:"老城夜市提前收摊",unlock:{any:["O02"]},eventIds:["O01","O02"],genres:["feature"],directions:["现场笔记","摊主采访"]},
   {id:"market_causality",title:"机器人产业链盘中上涨",unlock:{any:["H2"]},eventIds:["07","G1","G2","H2","H3"],genres:["news","commentary"],directions:["市场数据","市场人士采访","财经编辑观点","背景资料"]}
 ];
+
+const REPORTING_ANGLE_CARDS = {
+  news: {
+    elevator: [
+      {id:"elevator_progress",title:"电梯停运以后，现在处理到哪一步了？",question:"从居民发现故障，到物业维修、监管部门介入，目前有哪些已经确认的进展？",eventIds:["03","13","27"],materialIds:["EL_INT_03","EL_INT_04","EL_BG_02"],hint:"故障原因尚未最终确认，不能写成“已经查明”。"},
+      {id:"elevator_residents",title:"电梯停运具体影响了哪些居民？",question:"“出行不便”具体表现在哪里？",eventIds:["03","13"],materialIds:["EL_INT_01","EL_INT_02","EL_BG_01"],hint:"不要只概括“居民受到影响”，试着写清具体的人和具体改变。"}
+    ],
+    school: [
+      {id:"school_change",title:"中午刚澄清“不停课”，下午为什么真的停了？",question:"同一天里，学校信息为什么发生了变化？",eventIds:["16","18","29"],materialIds:["SCH_INT_02","SCH_INT_04","SCH_BG_01"],hint:"一定标明时间。“当时没有停课”和“后来停止剩余课程”并不矛盾。"},
+      {id:"school_notice",title:"突发天气里，学校应该怎样发布信息？",question:"情况不断变化时，学校怎样告诉学生和家长“现在已经确认的事实”？",eventIds:["18","29"],materialIds:["SCH_INT_02","SCH_INT_04","SCH_BG_01"],hint:"注意“截至目前”这样的时间限定。"}
+    ],
+    mountain: [
+      {id:"mountain_return",title:"37名游客怎样安全返回？",question:"从暂停高处线路，到最后一批游客返回，发生了什么？",eventIds:["MT01","MT02"],materialIds:["MT_TIME_01","MT_INT_01","MT_INT_02"]},
+      {id:"mountain_risk",title:"雨天登山真正的风险是什么？",question:"景区为什么需要转移游客？",eventIds:["MT01","MT02"],materialIds:["MT_BG_01","MT_INT_02","MT_INT_03"],hint:"不要只写“雨很大”，注意湿滑、能见度等真实材料。"}
+    ],
+    port_rain: [
+      {id:"port_restore",title:"港口暂停部分作业以后，现在恢复了吗？",question:"哪些作业暂停、造成了什么影响、什么时候开始恢复？",eventIds:["P02","P03"],materialIds:["PORT_DATA_01","PORT_INT_02"]},
+      {id:"port_chain",title:"一处停机为什么会影响后面的车辆和预约？",question:"港口一个环节暂停以后，影响怎样继续传到后面的调度？",eventIds:["P02","P03"],materialIds:["PORT_INT_01","PORT_INT_02","PORT_DATA_01"]}
+    ],
+    robot: [
+      {id:"robot_scope",title:"“服务全城”和实际测试范围一样吗？",question:"企业发布了什么？机器人当天真正可以在哪里运行？",eventIds:["07","19","T03"],materialIds:["ROB_INT_01","ROB_DATA_01","ROB_BG_01"],hint:"“长期目标”和“今天已经实现”不是一回事。"},
+      {id:"robot_unmanned",title:"现在的机器人到底有多“无人”？",question:"机器人已经能够独立完成什么，还需要哪些人工介入？",eventIds:["07","19","T03"],materialIds:["ROB_INT_02","ROB_INT_03","ROB_DATA_01"]}
+    ],
+    rain: [
+      {id:"rain_city",title:"这场雨是怎样一步步影响S城的？",question:"本组从上午到下午发现了哪些变化？",materialIds:["RAIN_BG_01","RAIN_INT_01","RAIN_INT_02"],hint:"RAIN_BG_01只汇总本组实际发现的暴雨相关事件。"},
+      {id:"rain_warning",title:"为什么预警和城市措施会不断升级？",question:"天气情况发生了哪些变化，城市应对为什么也跟着改变？",materialIds:["RAIN_BG_01","RAIN_INT_01","RAIN_INT_02"]}
+    ],
+    metro_rain: [
+      {id:"metro_cause",title:"地铁上午设备异常，最终查明原因了吗？",question:"从设备异常到最终调查结果，这件事经历了什么变化？",eventIds:["02","20","30"]},
+      {id:"metro_b_exit",title:"B口积水以后，地铁采取了什么措施？",question:"现场发生了什么，乘客怎样被引导？",eventIds:["20"],hint:"不要自动写入特写材料里的现场细节。"}
+    ],
+    celebrity: [
+      {id:"celebrity_true",title:"“林川现身S城”是真的吗？",question:"最初流传了什么，最终核实结果是什么？",eventIds:["06","23"]},
+      {id:"celebrity_verify",title:"一条未经确认的信息是怎样被证伪的？",question:"记者用了哪些来源，才从“网传”走到“确认不实”？",eventIds:["06","23"],hint:"注意第二来源：工作室与场地方不是同一个信息来源。"}
+    ],
+    market_causality: [
+      {id:"market_fact",title:"机器人产业链上涨2.1%，能确认什么？",question:"哪些市场变化是事实？哪些原因还没有被证实？",eventIds:["H2","H3"],materialIds:["MK_FACT_01","MK_FACT_02","MK_BG_01"]},
+      {id:"market_explain",title:"市场人士怎样解释这次上涨？",question:"记者能够确认哪些可能因素，又有哪些不能写成确定原因？",eventIds:["H2","H3"],materialIds:["MK_BG_01"],hint:"不要把时间先后写成唯一因果关系。"}
+    ]
+  },
+  feature: {
+    elevator:[{id:"feature_elevator",title:"17楼，一张没能赴约的复诊单",question:"陈庆海站在17楼电梯门前的几分钟发生了什么？",materialIds:["EL_FIELD_01","EL_INT_01"]}],
+    school:[{id:"feature_school",title:"16:20，科技节突然停下来",question:"红色预警出现以后，礼堂里发生了什么？",materialIds:["SCH_FIELD_01","SCH_INT_01"]}],
+    mountain:[{id:"feature_mountain",title:"14:28，最后一个人跨过门槛",question:"最后一批游客返回服务站的几分钟里，现场发生了什么？",materialIds:["MT_FIELD_01","MT_INT_02","MT_INT_03"]}],
+    port_rain:[{id:"feature_port_room",title:"机器停了，电话却更多了",question:"11:02部分岸桥停机以后，调度大厅发生了什么？",materialIds:["PORT_FIELD_01","PORT_INT_02"]},{id:"feature_port_driver",title:"一个集卡司机等待的一小时",question:"港区作业调整以后，一个司机的等待怎样展开？",materialIds:["PORT_FIELD_01","PORT_INT_01"]}],
+    metro_rain:[{id:"feature_metro_wu",title:"站务员小吴的两道粉笔线",question:"12:52左右，站务员怎样判断水位变化？",materialIds:["METRO_FIELD_01","METRO_SOUND_01","METRO_FOLLOW_A"],hint:"材料时间停留在12:52左右，不让人物知道16:45原因。"},{id:"feature_metro_passenger",title:"绕远七分钟的乘客",question:"B口关闭后，一名普通乘客怎样改走A口？",materialIds:["METRO_FIELD_01","METRO_FIELD_02","METRO_FOLLOW_B"]},{id:"feature_metro_cleaner",title:"一直把水推回门外的保洁员",question:"保洁员在B口临时关闭时做了什么？",materialIds:["METRO_FIELD_02","METRO_SOUND_01","METRO_FOLLOW_C"]}],
+    nightmarket:[{id:"feature_night_busy",title:"平常最热闹的时候，今天却在收摊",question:"老周和夜市摊位在雨中发生了什么？",materialIds:["NIGHT_INT_01","NIGHT_FIELD_01","NIGHT_FIELD_02"]},{id:"feature_night_quiet",title:"一条夜市怎样慢慢安静下来",question:"从棚顶积水到招牌灯关闭，夜市怎样变化？",materialIds:["NIGHT_FIELD_01","NIGHT_FIELD_02","NIGHT_FIELD_03","NIGHT_FIELD_04"]},{id:"feature_night_last",title:"最后一名顾客离开以后",question:"最后一名顾客离开后，夜市现场还剩下什么？",materialIds:["NIGHT_FIELD_03","NIGHT_FIELD_04","NIGHT_INT_01"],hint:"不要增加经济、政策或宏大意义。"}]
+  },
+  commentary: {
+    elevator:[{id:"comment_elevator_care",title:"公共设施突然失灵时，谁最需要被优先照顾？",question:"面对老人、行动不便居民等人群，小区应该提供怎样的应急帮助？",materialIds:["EL_INT_01","EL_INT_03","EL_BG_01","EL_BG_02"]},{id:"comment_elevator_blame",title:"故障原因没查清之前，可以先追责吗？",question:"记者应该怎样区分“正在调查”和“已经认定责任”？",materialIds:["EL_INT_03","EL_INT_04","EL_BG_02"],hint:"现有证据不支持“物业违规导致电梯故障”的结论。"}],
+    school:[{id:"comment_school_speed",title:"突发事件中，信息应该先快还是先准？",question:"学校信息发布如何兼顾速度和准确？",materialIds:["SCH_VIEW_01","SCH_VIEW_02","SCH_VIEW_03","SCH_VIEW_04","SCH_BG_01"]},{id:"comment_school_now",title:"新闻里的“截至目前”为什么重要？",question:"事实会随着时间改变时，报道怎样避免让“当时正确”变成“后来误导”？",eventIds:["16","18","29"],materialIds:["SCH_INT_02","SCH_INT_04","SCH_BG_01"]}],
+    robot:[{id:"comment_robot_space",title:"机器人进入人行空间以后，谁应该给谁让路？",question:"新技术进入公共道路时，人的通行空间怎样被保护？",materialIds:["ROB_VIEW_01","ROB_VIEW_02","ROB_VIEW_03","ROB_DATA_01"]},{id:"comment_robot_rule",title:"新技术应该先有完整规则，还是边试边建立规则？",question:"道路测试规则不完整时，试点应该怎样推进？",materialIds:["ROB_VIEW_03","ROB_VIEW_04","ROB_BG_01","ROB_DATA_01"],hint:"材料中没有发生碰撞。"}],
+    rain:[{id:"comment_rain_fail",title:"道路出现积水，就能说明一座城市应对失败吗？",question:"评价城市应对能不能只看有没有积水？",materialIds:["RAIN_VIEW_01","RAIN_VIEW_02","RAIN_VIEW_03","RAIN_BG_01"]},{id:"comment_rain_standard",title:"评价极端天气中的城市应对，应该看什么？",question:"预警、封控、转移、恢复速度分别说明什么？",materialIds:["RAIN_VIEW_02","RAIN_VIEW_03","RAIN_VIEW_04","RAIN_BG_01"]}],
+    celebrity:[{id:"comment_rumor_forward",title:"“我只是转发”，就没有传播责任了吗？",question:"转发未经核实的信息是否也参与了传播？",materialIds:["RUM_VIEW_01","RUM_VIEW_02","RUM_VIEW_04","RUM_VIEW_05"]},{id:"comment_rumor_chain",title:"一条没有人完全编造的消息，为什么会越来越不真实？",question:"信息在不同账号和群聊之间如何变形？",materialIds:["RUM_CHAIN_01","RUM_CHAIN_02","RUM_CHAIN_03","RUM_VIEW_05"]},{id:"comment_rumor_crowd",title:"为什么很多人会跟着未经核实的信息行动？",question:"围观和转发背后有哪些心理和平台因素？",materialIds:["RUM_CHAIN_01","RUM_CHAIN_02","RUM_CHAIN_03","RUM_VIEW_03","RUM_VIEW_04"]}],
+    market_causality:[{id:"comment_market_cause",title:"两件事先后发生，就能说明前者导致后者吗？",question:"时间先后与因果关系有什么区别？",materialIds:["MK_FACT_01","MK_FACT_02","MK_VIEW_02","MK_BG_01"]},{id:"comment_market_simple",title:"财经新闻为了好懂，可以把复杂原因说成一个原因吗？",question:"报道市场变化时，简化解释的边界在哪里？",materialIds:["MK_VIEW_01","MK_VIEW_02","MK_VIEW_03","MK_BG_01"]},{id:"comment_market_title",title:"“应声大涨”这个标题的问题在哪里？",question:"这个标题把什么写成了确定因果？",materialIds:["MK_FACT_01","MK_FACT_02","MK_VIEW_01","MK_BG_01"]}]
+  }
+};
 
 const material = (item) => ({
   type:"interview", title:item.actionLabel || "采写材料", actionLabel:"查看材料",
@@ -36,20 +93,20 @@ const material = (item) => ({
 
 const REPORTING_MATERIALS = [
   /* 电梯 */
-  material({id:"EL_INT_01",storyline:"elevator",actionLabel:"采访一名行动不便的居民",source:{name:"陈庆海",identity:"72岁，退休公交司机，东城家园6栋17楼居民"},sourceTag:"直接采访 · 当事人",summary:"膝关节手术后的复诊计划因电梯停运被迫推迟。",details:["三个月前接受膝关节手术。","每两周到第一人民医院复诊。","当天原定09:30复诊。","女儿当天在城西工作，无法立即赶来。","最终联系医院，把预约推迟到第二天。"],quotes:["我走到电梯口，两部都没亮。我一看就知道，今天这个楼我是下不去了。","年轻时候十七层我敢走，现在这条腿，下去了就不知道还能不能上来。","十七层，不是咬咬牙就能走下去的。"],genres:["communication","feature","commentary"],featureFollow:true,autoGenres:["commentary"],factContribution:true}),
-  material({id:"EL_INT_02",storyline:"elevator",actionLabel:"采访另一户受影响居民",source:{name:"刘婧",identity:"34岁，东城家园14楼居民"},sourceTag:"直接采访 · 当事人",summary:"她原定送两岁女儿去托育中心，丈夫临时返回协助。",details:["原定08:30送两岁女儿到托育中心。","需要同时抱孩子和携带折叠婴儿车。","丈夫临时从单位返回帮助下楼。","比平时晚出门约50分钟。"],quotes:["我能走楼梯，可一只手抱孩子，一只手拎婴儿车，十四层怎么走？"],genres:["communication"]}),
-  material({id:"EL_INT_03",storyline:"elevator",actionLabel:"联系小区物业",source:{name:"赵宏",identity:"东城家园物业项目经理"},sourceTag:"直接采访 · 涉事方",summary:"物业说明报修、到场和临时协助情况。",details:["06:47收到第一条报修信息。","07:18维保人员到场。","物业初步怀疑可能涉及同批次控制模块。","上午安排两名工作人员帮助有紧急需要居民联系家属或医院。","目前没有针对高层行动不便居民的专门转运预案。"],quotes:["我们6点47分收到第一条报修信息，7点18分维保人员到场。","上午安排工作人员协助有紧急需要的住户联系医院或家属，但没有针对高层行动不便居民的专门转运预案。"],genres:["communication","commentary"],autoGenres:["commentary"],factContribution:true,process:true,reliabilityTag:"利益相关方说法",warning:"涉事方说法。控制模块只是初步判断，不能写成最终故障原因。"}),
-  material({id:"EL_INT_04",storyline:"elevator",actionLabel:"采访电梯维保工程师",source:{name:"何勇",identity:"电梯维保工程师"},sourceTag:"直接采访 · 工作人员",summary:"工程师说明排查步骤与现阶段结论边界。",details:["现场检查控制柜。","读取故障代码。","核对维保记录。","逐台复位。"],quotes:["四栋使用同批型号控制模块，只说明值得一起排查，不能证明四台设备是同一个故障原因。"],genres:["communication"]}),
-  material({id:"EL_BG_01",storyline:"elevator",type:"background",title:"东城家园基础资料",actionLabel:"查阅东城家园基础资料",source:{name:"东城家园公开资料",identity:"社区基础资料"},sourceTag:"官方资料",summary:"小区楼龄、户数、电梯与老年人口背景。",details:["2011年交付。","涉事4栋约620户。","每栋2台电梯。","登记60岁以上居民约170人。","最近一次定期检验结果为“合格”。"],genres:["communication","commentary"],factContribution:true,warning:"检验合格不意味着设备未来不会故障。"}),
-  material({id:"EL_BG_02",storyline:"elevator",type:"background",title:"监管部门调查进度",actionLabel:"联系市场监管部门",source:{name:"S城市场监管部门",identity:"监管部门回应"},sourceTag:"官方资料",summary:"监管部门正在核查维保记录与故障原因。",details:["正在核查维保记录。","正在核查故障原因。","尚未作出责任认定。"],genres:["communication","commentary"],factContribution:true,warning:"现有证据不支持“物业违规导致电梯故障”的表述。"}),
+  material({id:"EL_INT_01",storyline:"elevator",actionLabel:"采访一名行动不便的居民",source:{name:"陈庆海",identity:"72岁，退休公交司机，东城家园6栋17楼居民"},sourceTag:"直接采访 · 当事人",summary:"膝关节手术后的复诊计划因电梯停运被迫推迟。",details:["三个月前接受膝关节手术。","每两周到第一人民医院复诊。","当天原定09:30复诊。","女儿当天在城西工作，无法立即赶来。","最终联系医院，把预约推迟到第二天。"],quotes:["我走到电梯口，两部都没亮。我一看就知道，今天这个楼我是下不去了。","年轻时候十七层我敢走，现在这条腿，下去了就不知道还能不能上来。","十七层，不是咬咬牙就能走下去的。"],genres:["news","feature","commentary"],featureFollow:true,autoGenres:["commentary"],factContribution:true}),
+  material({id:"EL_INT_02",storyline:"elevator",actionLabel:"采访另一户受影响居民",source:{name:"刘婧",identity:"34岁，东城家园14楼居民"},sourceTag:"直接采访 · 当事人",summary:"她原定送两岁女儿去托育中心，丈夫临时返回协助。",details:["原定08:30送两岁女儿到托育中心。","需要同时抱孩子和携带折叠婴儿车。","丈夫临时从单位返回帮助下楼。","比平时晚出门约50分钟。"],quotes:["我能走楼梯，可一只手抱孩子，一只手拎婴儿车，十四层怎么走？"],genres:["news"]}),
+  material({id:"EL_INT_03",storyline:"elevator",actionLabel:"联系小区物业",source:{name:"赵宏",identity:"东城家园物业项目经理"},sourceTag:"直接采访 · 涉事方",summary:"物业说明报修、到场和临时协助情况。",details:["06:47收到第一条报修信息。","07:18维保人员到场。","物业初步怀疑可能涉及同批次控制模块。","上午安排两名工作人员帮助有紧急需要居民联系家属或医院。","目前没有针对高层行动不便居民的专门转运预案。"],quotes:["我们6点47分收到第一条报修信息，7点18分维保人员到场。","上午安排工作人员协助有紧急需要的住户联系医院或家属，但没有针对高层行动不便居民的专门转运预案。"],genres:["news","commentary"],autoGenres:["commentary"],factContribution:true,process:true,reliabilityTag:"利益相关方说法",warning:"涉事方说法。控制模块只是初步判断，不能写成最终故障原因。"}),
+  material({id:"EL_INT_04",storyline:"elevator",actionLabel:"采访电梯维保工程师",source:{name:"何勇",identity:"电梯维保工程师"},sourceTag:"直接采访 · 工作人员",summary:"工程师说明排查步骤与现阶段结论边界。",details:["现场检查控制柜。","读取故障代码。","核对维保记录。","逐台复位。"],quotes:["四栋使用同批型号控制模块，只说明值得一起排查，不能证明四台设备是同一个故障原因。"],genres:["news","commentary"]}),
+  material({id:"EL_BG_01",storyline:"elevator",type:"background",title:"东城家园基础资料",actionLabel:"查阅东城家园基础资料",source:{name:"东城家园公开资料",identity:"社区基础资料"},sourceTag:"官方资料",summary:"小区楼龄、户数、电梯与老年人口背景。",details:["2011年交付。","涉事4栋约620户。","每栋2台电梯。","登记60岁以上居民约170人。","最近一次定期检验结果为“合格”。"],genres:["news","commentary"],factContribution:true,warning:"检验合格不意味着设备未来不会故障。"}),
+  material({id:"EL_BG_02",storyline:"elevator",type:"background",title:"监管部门调查进度",actionLabel:"联系市场监管部门",source:{name:"S城市场监管部门",identity:"监管部门回应"},sourceTag:"官方资料",summary:"监管部门正在核查维保记录与故障原因。",details:["正在核查维保记录。","正在核查故障原因。","尚未作出责任认定。"],genres:["news","commentary"],factContribution:true,warning:"现有证据不支持“物业违规导致电梯故障”的表述。"}),
   material({id:"EL_FIELD_01",storyline:"elevator",type:"field_note",title:"17楼电梯门前",actionLabel:"调取记者现场笔记",source:{name:"本报记者",identity:"08:53—09:06，东城家园6栋17楼"},sourceTag:"记者现场",summary:"一张复诊预约单和一扇没有亮起的电梯门。",observations:["两扇银灰色电梯门紧闭。","门上贴着A4纸：“设备故障，暂停使用”。","陈庆海手里拿着折过两次的医院预约单。","他按了一次下行按钮，按钮没有亮。","他推开消防楼梯门，楼道声控灯亮起。","他向下看了约三秒，随后重新把门关上。","电梯井内传出维修人员敲击金属的声音。","楼下有人喊：“师傅，什么时候能好？”","陈庆海把预约单重新折好，塞入衬衣胸前口袋。","09:06，他拨通医院电话：“医生你好，我今天可能来不了了。”"],quotes:["十七层，不是咬咬牙就能走下去的。"],genres:["feature"],autoGenres:["feature"],quoteAllowed:true}),
 
   /* 第三中学 */
-  material({id:"SCH_INT_01",storyline:"school",actionLabel:"采访八年级学生",source:{name:"林嘉",identity:"八年级学生"},sourceTag:"直接采访 · 当事人",summary:"她经历了午间传言和下午正式通知。",details:["看到截图后，她给母亲发送了一个“？”。"],quotes:["中午我们还在礼堂调机器人，有同学突然说‘停课了’，大家第一反应都是拿手机。","中午那个停课是假的，可现在真的停了。"],genres:["communication","feature"],featureFollow:true}),
-  material({id:"SCH_INT_02",storyline:"school",actionLabel:"采访班主任",source:{name:"陈老师",identity:"八年级班主任"},sourceTag:"直接采访 · 工作人员",summary:"班主任解释为何不能依据截图自行宣布停课。",quotes:["当时学校没有收到停课通知，我不能因为一张截图告诉学生‘你们放学吧’。","我们特意强调的是‘截至目前’。"],genres:["communication","commentary"],factContribution:true}),
-  material({id:"SCH_INT_03",storyline:"school",actionLabel:"采访学生家长",source:{name:"罗女士",identity:"第三中学学生家长"},sourceTag:"直接采访 · 当事人",summary:"家长关注的不只是快慢，还有下一条通知能否相信。",quotes:["截图一出来我已经准备跟公司请假了。","我不是生气，我是不知道下一条到底该信谁。","这次通知明确写了不用立即冒雨接，我反而没有马上开车。"],genres:["communication","commentary"],factContribution:true}),
-  material({id:"SCH_INT_04",storyline:"school",actionLabel:"联系学校值班副校长",source:{name:"第三中学值班副校长",identity:"校方负责人"},sourceTag:"直接采访 · 涉事方",summary:"校方说明12:28澄清与16点后决定并不矛盾。",quotes:["12点28分那条澄清没有失效，它准确描述了12点28分的事实。","16点以后条件发生变化，决定自然也发生变化。"],genres:["communication","commentary"],factContribution:true,process:true,reliabilityTag:"涉事方说法"}),
-  material({id:"SCH_BG_01",storyline:"school",type:"background",title:"极端天气校园信息规则",actionLabel:"查阅极端天气校园信息规则",source:{name:"S城教育部门",identity:"校园极端天气公开指引"},sourceTag:"官方资料",summary:"校园公告应标明当前时间和适用范围。",details:["学校根据当前有效预警和教育部门要求处理。","已经在校学生优先确保安全。","不要求家长在极端天气中立即冒险接回。","公告应注明当前时间和适用范围。"],genres:["communication","commentary"],factContribution:true}),
+  material({id:"SCH_INT_01",storyline:"school",actionLabel:"采访八年级学生",source:{name:"林嘉",identity:"八年级学生"},sourceTag:"直接采访 · 当事人",summary:"她经历了午间传言和下午正式通知。",details:["看到截图后，她给母亲发送了一个“？”。"],quotes:["中午我们还在礼堂调机器人，有同学突然说‘停课了’，大家第一反应都是拿手机。","中午那个停课是假的，可现在真的停了。"],genres:["news","feature"],featureFollow:true}),
+  material({id:"SCH_INT_02",storyline:"school",actionLabel:"采访班主任",source:{name:"陈老师",identity:"八年级班主任"},sourceTag:"直接采访 · 工作人员",summary:"班主任解释为何不能依据截图自行宣布停课。",quotes:["当时学校没有收到停课通知，我不能因为一张截图告诉学生‘你们放学吧’。","我们特意强调的是‘截至目前’。"],genres:["news","commentary"],factContribution:true}),
+  material({id:"SCH_INT_03",storyline:"school",actionLabel:"采访学生家长",source:{name:"罗女士",identity:"第三中学学生家长"},sourceTag:"直接采访 · 当事人",summary:"家长关注的不只是快慢，还有下一条通知能否相信。",quotes:["截图一出来我已经准备跟公司请假了。","我不是生气，我是不知道下一条到底该信谁。","这次通知明确写了不用立即冒雨接，我反而没有马上开车。"],genres:["news","commentary"],factContribution:true}),
+  material({id:"SCH_INT_04",storyline:"school",actionLabel:"联系学校值班副校长",source:{name:"第三中学值班副校长",identity:"校方负责人"},sourceTag:"直接采访 · 涉事方",summary:"校方说明12:28澄清与16点后决定并不矛盾。",quotes:["12点28分那条澄清没有失效，它准确描述了12点28分的事实。","16点以后条件发生变化，决定自然也发生变化。"],genres:["news","commentary"],factContribution:true,process:true,reliabilityTag:"涉事方说法"}),
+  material({id:"SCH_BG_01",storyline:"school",type:"background",title:"极端天气校园信息规则",actionLabel:"查阅极端天气校园信息规则",source:{name:"S城教育部门",identity:"校园极端天气公开指引"},sourceTag:"官方资料",summary:"校园公告应标明当前时间和适用范围。",details:["学校根据当前有效预警和教育部门要求处理。","已经在校学生优先确保安全。","不要求家长在极端天气中立即冒险接回。","公告应注明当前时间和适用范围。"],genres:["news","commentary"],factContribution:true}),
   material({id:"SCH_FIELD_01",storyline:"school",type:"field_note",title:"16:20，科技节停下来",actionLabel:"调取礼堂现场笔记",source:{name:"本报记者",identity:"16:20，第三中学礼堂"},sourceTag:"记者现场",summary:"红色预警抵达手机屏幕，科技节展品被装回纸箱。",observations:["一台学生自制气象仪仍在旋转，旁边贴着“风速实验组”。","十几部学生手机几乎同时亮起红色预警提示。","有人说：“真的红了。”","两名学生开始把机器人模型装入纸箱。","班主任逐个点名核对人数。","纸箱盖合上之前，机器人轮子还转了一下。","窗外雨声明显增大。","广播：“请各班学生留在原区域，等待学校统一安排。”"],quotes:["中午那个停课是假的，可现在真的停了。"],genres:["feature"],autoGenres:["feature"]}),
   material({id:"SCH_VIEW_01",storyline:"school",type:"viewpoint",title:"家长观点：宁愿先收到提醒",source:{name:"受访家长甲",identity:"学生家长"},sourceTag:"直接采访 · 当事人",summary:"倾向于尽早发布提醒。",quotes:["极端天气里，我宁愿先看到一个提醒，哪怕还没完全确认。"],genres:["commentary"],autoGenres:["commentary"]}),
   material({id:"SCH_VIEW_02",storyline:"school",type:"viewpoint",title:"另一位家长：错误信息也可能制造危险",source:{name:"受访家长乙",identity:"学生家长"},sourceTag:"直接采访 · 当事人",summary:"担忧未经确认的消息引发集中接送。",quotes:["如果大家看到未经确认的停课消息都开车去学校，可能反而制造危险。"],genres:["commentary"],autoGenres:["commentary"]}),
@@ -57,36 +114,36 @@ const REPORTING_MATERIALS = [
   material({id:"SCH_VIEW_04",storyline:"school",type:"viewpoint",title:"传播研究者观点",actionLabel:"采访传播研究者",source:{name:"传播研究者",identity:"第三方研究者"},sourceTag:"第三方专家",summary:"关键是区分已确认与仍在核实的内容。",quotes:["真正的问题不是简单的快和准，而是能不能清楚区分：什么已经确认，什么仍在核实。"],genres:["commentary"],commentQuestion:"突发事件中，“尚未确认”的信息应不应该发布？"}),
 
   /* 山海景区 */
-  material({id:"MT_INT_01",storyline:"mountain",actionLabel:"采访景区巡护员",source:{name:"景区巡护员",identity:"参与定位游客"},sourceTag:"直接采访 · 工作人员",summary:"救援从确认各组游客位置开始。",quotes:["第一件事不是冲上山，是先确认每一组游客在哪里。"],genres:["communication"]}),
-  material({id:"MT_INT_02",storyline:"mountain",actionLabel:"采访救援员",source:{name:"林超",identity:"救援队员"},sourceTag:"直接采访 · 工作人员",summary:"湿滑石阶要求救援队控制速度。",quotes:["真正危险的是湿石阶，不是雨有多大。","越急越容易滑，我们一路都在喊慢一点。"],genres:["communication","feature"],featureFollow:true}),
-  material({id:"MT_INT_03",storyline:"mountain",actionLabel:"采访一名游客",source:{name:"周怡",identity:"大学生游客"},sourceTag:"直接采访 · 当事人",summary:"能见度变化让游客意识到风险。",quotes:["最开始大家还觉得雨景很好看。","山下建筑慢慢看不清了，我才觉得有点不对。"],genres:["communication","feature"],featureFollow:true}),
-  material({id:"MT_BG_01",storyline:"mountain",type:"background",title:"高处线路资料",actionLabel:"查阅高处线路资料",source:{name:"山海景区线路资料",identity:"公开导览与安全资料"},sourceTag:"官方资料",summary:"高处线路长4.8公里，雨天有湿滑与能见度风险。",details:["线路约4.8公里。","最高点约430米。","部分路段为天然石阶。","雨天主要风险为湿滑、能见度下降。"],genres:["communication"],factContribution:true}),
-  material({id:"MT_TIME_01",storyline:"mountain",type:"background",title:"景区救援记录",actionLabel:"调取景区救援记录",source:{name:"山海景区救援记录",identity:"现场处置时间表"},sourceTag:"官方资料",summary:"从暂停售票到最后一批游客返回的完整时间线。",details:["12:52，暂停高处线路售票。","13:17，确认仍有37人在两条山径。","13:29，6名救援人员分两组出发。","14:06，第一批21人返回服务站。","14:28，最后16人返回。","无人受伤。"],genres:["communication"],factContribution:true,process:true}),
+  material({id:"MT_INT_01",storyline:"mountain",actionLabel:"采访景区巡护员",source:{name:"景区巡护员",identity:"参与定位游客"},sourceTag:"直接采访 · 工作人员",summary:"救援从确认各组游客位置开始。",quotes:["第一件事不是冲上山，是先确认每一组游客在哪里。"],genres:["news"]}),
+  material({id:"MT_INT_02",storyline:"mountain",actionLabel:"采访救援员",source:{name:"林超",identity:"救援队员"},sourceTag:"直接采访 · 工作人员",summary:"湿滑石阶要求救援队控制速度。",quotes:["真正危险的是湿石阶，不是雨有多大。","越急越容易滑，我们一路都在喊慢一点。"],genres:["news","feature"],featureFollow:true}),
+  material({id:"MT_INT_03",storyline:"mountain",actionLabel:"采访一名游客",source:{name:"周怡",identity:"大学生游客"},sourceTag:"直接采访 · 当事人",summary:"能见度变化让游客意识到风险。",quotes:["最开始大家还觉得雨景很好看。","山下建筑慢慢看不清了，我才觉得有点不对。"],genres:["news","feature"],featureFollow:true}),
+  material({id:"MT_BG_01",storyline:"mountain",type:"background",title:"高处线路资料",actionLabel:"查阅高处线路资料",source:{name:"山海景区线路资料",identity:"公开导览与安全资料"},sourceTag:"官方资料",summary:"高处线路长4.8公里，雨天有湿滑与能见度风险。",details:["线路约4.8公里。","最高点约430米。","部分路段为天然石阶。","雨天主要风险为湿滑、能见度下降。"],genres:["news"],factContribution:true}),
+  material({id:"MT_TIME_01",storyline:"mountain",type:"background",title:"景区救援记录",actionLabel:"调取景区救援记录",source:{name:"山海景区救援记录",identity:"现场处置时间表"},sourceTag:"官方资料",summary:"从暂停售票到最后一批游客返回的完整时间线。",details:["12:52，暂停高处线路售票。","13:17，确认仍有37人在两条山径。","13:29，6名救援人员分两组出发。","14:06，第一批21人返回服务站。","14:28，最后16人返回。","无人受伤。"],genres:["news"],factContribution:true,process:true}),
   material({id:"MT_FIELD_01",storyline:"mountain",type:"field_note",title:"14:28，最后一个人跨过门槛",actionLabel:"调取救援现场笔记",source:{name:"本报记者",identity:"14:28，山海景区服务站"},sourceTag:"记者现场",summary:"最后16名游客回到服务站的现场。",observations:["最后16名游客排成一列。","一名救援员在最滑石阶下方拉着辅助绳。","一双白色运动鞋已经变成泥黄色。","一名游客手中的纸质景区地图被雨泡软，边缘卷起。","服务站工作人员递出毛巾和热水。","救援员喊：“别看后面，看脚下！”","14:28，最后一名游客跨进服务站。","服务站门关闭以后，仍能听见门外雨水冲过排水沟的声音。"],genres:["feature"],autoGenres:["feature"]}),
 
   /* 深东港 */
-  material({id:"PORT_INT_01",storyline:"port_rain",actionLabel:"采访一名集卡司机",source:{name:"黄志强",identity:"47岁，集卡司机"},sourceTag:"直接采访 · 当事人",summary:"港外排队影响后续预约。",quotes:["平时一趟四十多分钟，今天港外排了一个多小时。","我最怕的不是这一趟慢，是后面的预约全部一起乱。"],genres:["communication","feature"],featureFollow:true}),
-  material({id:"PORT_INT_02",storyline:"port_rain",actionLabel:"采访港口调度员",source:{name:"吴静",identity:"31岁，港口调度员"},sourceTag:"直接采访 · 工作人员",summary:"设备停机后，调度仍需重排预约和泊位。",quotes:["机器停下来以后，调度不能停。","前面一个时段动不了，后面的预约、泊位、车辆全部要重新排。"],genres:["communication","feature"],featureFollow:true}),
-  material({id:"PORT_INT_03",storyline:"port_rain",actionLabel:"采访岸桥操作员",source:{name:"岸桥操作员",identity:"深东港一线工作人员"},sourceTag:"直接采访 · 工作人员",summary:"是否停机取决于实时风速是否超过安全标准。",quotes:["不是下雨就一定停，真正盯的是风速。","驾驶室在几十米高处，超过安全标准就不能冒险。"],genres:["communication"]}),
-  material({id:"PORT_DATA_01",storyline:"port_rain",type:"data",title:"港口调度统计",actionLabel:"获取港口调度统计",source:{name:"深东港调度中心",identity:"当日调度统计"},sourceTag:"数据资料",summary:"两泊位停作业，43辆预约集卡调时，15:16后恢复。",details:["2个泊位暂停高空吊装。","43辆预约集卡调整时段。","3批货物延后。","15:16后逐渐恢复。","当日无货物安全事故。"],genres:["communication"],factContribution:true,process:true}),
+  material({id:"PORT_INT_01",storyline:"port_rain",actionLabel:"采访一名集卡司机",source:{name:"黄志强",identity:"47岁，集卡司机"},sourceTag:"直接采访 · 当事人",summary:"港外排队影响后续预约。",quotes:["平时一趟四十多分钟，今天港外排了一个多小时。","我最怕的不是这一趟慢，是后面的预约全部一起乱。"],genres:["news","feature"],featureFollow:true}),
+  material({id:"PORT_INT_02",storyline:"port_rain",actionLabel:"采访港口调度员",source:{name:"吴静",identity:"31岁，港口调度员"},sourceTag:"直接采访 · 工作人员",summary:"设备停机后，调度仍需重排预约和泊位。",quotes:["机器停下来以后，调度不能停。","前面一个时段动不了，后面的预约、泊位、车辆全部要重新排。"],genres:["news","feature"],featureFollow:true}),
+  material({id:"PORT_INT_03",storyline:"port_rain",actionLabel:"采访岸桥操作员",source:{name:"岸桥操作员",identity:"深东港一线工作人员"},sourceTag:"直接采访 · 工作人员",summary:"是否停机取决于实时风速是否超过安全标准。",quotes:["不是下雨就一定停，真正盯的是风速。","驾驶室在几十米高处，超过安全标准就不能冒险。"],genres:["news"]}),
+  material({id:"PORT_DATA_01",storyline:"port_rain",type:"data",title:"港口调度统计",actionLabel:"获取港口调度统计",source:{name:"深东港调度中心",identity:"当日调度统计"},sourceTag:"数据资料",summary:"两泊位停作业，43辆预约集卡调时，15:16后恢复。",details:["2个泊位暂停高空吊装。","43辆预约集卡调整时段。","3批货物延后。","15:16后逐渐恢复。","当日无货物安全事故。"],genres:["news"],factContribution:true,process:true}),
   material({id:"PORT_FIELD_01",storyline:"port_rain",type:"field_note",title:"11:02，吊具停在半空",actionLabel:"调取港区现场笔记",source:{name:"本报记者",identity:"11:02，深东港"},sourceTag:"记者现场",summary:"外面的机器安静下来，调度大厅里的电话反而更多。",observations:["一只空吊具停止移动，巨大的岸桥保持静止。","下面的集卡仍缓慢移动。","岸桥操作员从几十米高的驾驶室下来。","调度大厅内，两个原本绿色的泊位框变成黄色。","吴静拿起电话：“12点这一批先往后移。”","随后拿起另一部电话：“司机先别进闸，等新预约。”","核心观察：外面的机器安静下来，调度大厅里的电话反而更多了。"],genres:["feature"],autoGenres:["feature"]}),
 
   /* 配送机器人 */
-  material({id:"ROB_INT_01",storyline:"robot",actionLabel:"采访星途科技产品经理",source:{name:"星途科技产品经理",identity:"产品发布涉事方"},sourceTag:"直接采访 · 涉事方",summary:"“服务全城”是长期目标，测试限制在附件中。",quotes:["‘服务全城’说的是长期目标，不意味着今天可以驶入所有公共道路。","具体测试范围写在新闻资料附件里。"],details:["记者追问：为什么发布会主页面没有强调测试限制？"],genres:["communication","commentary"],reliabilityTag:"利益相关方说法",factContribution:true,process:true}),
-  material({id:"ROB_INT_02",storyline:"robot",actionLabel:"跟随一名机器人测试安全员",source:{name:"何嘉",identity:"机器人测试安全员"},sourceTag:"直接采访 · 工作人员",summary:"安全员每日跟随约20公里，并携带人工控制器。",details:["每日跟随机器人约20公里。","腰间携带手持人工控制器。"],quotes:["大家看它自己跑，会觉得完全没有人管，其实异常情况下必须人工接管。"],genres:["communication"],factContribution:true}),
-  material({id:"ROB_INT_03",storyline:"robot",actionLabel:"采访一名配送骑手",source:{name:"张浩",identity:"配送骑手"},sourceTag:"直接采访 · 当事人",summary:"固定路线之外，门禁和临时地址才是配送难点。",quotes:["园区固定路线它有优势，但居民楼、电梯、门禁、临时改地址，这些才是城市配送真正麻烦的地方。"],genres:["communication"]}),
-  material({id:"ROB_DATA_01",storyline:"robot",type:"data",title:"机器人测试运行数据",actionLabel:"获取测试运行数据",source:{name:"园区测试台账",identity:"模拟教学数据"},sourceTag:"数据资料",summary:"3.1公里固定线路的阶段性测试记录。",details:["测试线路3.1公里。","固定停靠点7个。","平均速度约6km/h。","日均测试订单约210单。","人工接管率约3.2%。","尚未获得城市开放道路商业运营许可。"],genres:["communication","commentary"],reliabilityTag:"模拟教学数据",factContribution:true,warning:"必须标明“模拟教学数据”；测试数据不能外推为全城运行表现。"}),
+  material({id:"ROB_INT_01",storyline:"robot",actionLabel:"采访星途科技产品经理",source:{name:"星途科技产品经理",identity:"产品发布涉事方"},sourceTag:"直接采访 · 涉事方",summary:"“服务全城”是长期目标，测试限制在附件中。",quotes:["‘服务全城’说的是长期目标，不意味着今天可以驶入所有公共道路。","具体测试范围写在新闻资料附件里。"],details:["记者追问：为什么发布会主页面没有强调测试限制？"],genres:["news","commentary"],reliabilityTag:"利益相关方说法",factContribution:true,process:true}),
+  material({id:"ROB_INT_02",storyline:"robot",actionLabel:"跟随一名机器人测试安全员",source:{name:"何嘉",identity:"机器人测试安全员"},sourceTag:"直接采访 · 工作人员",summary:"安全员每日跟随约20公里，并携带人工控制器。",details:["每日跟随机器人约20公里。","腰间携带手持人工控制器。"],quotes:["大家看它自己跑，会觉得完全没有人管，其实异常情况下必须人工接管。"],genres:["news"],factContribution:true}),
+  material({id:"ROB_INT_03",storyline:"robot",actionLabel:"采访一名配送骑手",source:{name:"张浩",identity:"配送骑手"},sourceTag:"直接采访 · 当事人",summary:"固定路线之外，门禁和临时地址才是配送难点。",quotes:["园区固定路线它有优势，但居民楼、电梯、门禁、临时改地址，这些才是城市配送真正麻烦的地方。"],genres:["news"]}),
+  material({id:"ROB_DATA_01",storyline:"robot",type:"data",title:"机器人测试运行数据",actionLabel:"获取测试运行数据",source:{name:"园区测试台账",identity:"模拟教学数据"},sourceTag:"数据资料",summary:"3.1公里固定线路的阶段性测试记录。",details:["测试线路3.1公里。","固定停靠点7个。","平均速度约6km/h。","日均测试订单约210单。","人工接管率约3.2%。","尚未获得城市开放道路商业运营许可。"],genres:["news","commentary"],reliabilityTag:"模拟教学数据",factContribution:true,warning:"必须标明“模拟教学数据”；测试数据不能外推为全城运行表现。"}),
   material({id:"ROB_VIEW_01",storyline:"robot",type:"viewpoint",title:"支持试点的园区居民",source:{name:"园区居民甲",identity:"试点支持者"},sourceTag:"直接采访 · 当事人",summary:"认为机器人可能减少配送电动车乱停。",quotes:["如果它能减少园区里乱停的配送电动车，我支持试。"],genres:["commentary"],autoGenres:["commentary"]}),
   material({id:"ROB_VIEW_02",storyline:"robot",type:"viewpoint",title:"推婴儿车居民",source:{name:"园区居民乙",identity:"道路使用者"},sourceTag:"直接采访 · 当事人",summary:"担忧机器人进一步挤占人行道。",quotes:["有些人行道两个人并排都嫌挤，再加机器人谁给谁让？"],genres:["commentary"],autoGenres:["commentary"]}),
   material({id:"ROB_VIEW_03",storyline:"robot",type:"viewpoint",title:"交通研究者",actionLabel:"采访交通研究者",source:{name:"交通研究者",identity:"第三方研究者"},sourceTag:"第三方专家",summary:"把问题放到道路空间分配中讨论。",quotes:["真正的问题不是机器人先进不先进，而是谁拥有道路空间。"],genres:["commentary"]}),
   material({id:"ROB_VIEW_04",storyline:"robot",type:"viewpoint",title:"法律研究者",actionLabel:"采访法律研究者",source:{name:"法律研究者",identity:"第三方研究者"},sourceTag:"第三方专家",summary:"关注碰撞后的责任划分。",quotes:["发生碰撞以后，制造商、运营者和人工控制人员之间的责任必须提前明确。"],genres:["commentary"]}),
-  material({id:"ROB_BG_01",storyline:"robot",type:"background",title:"道路测试政策",actionLabel:"查询道路测试政策",source:{name:"S城市政府会议资料",identity:"政策公开资料"},sourceTag:"官方资料",summary:"管理办法只获原则通过，具体道路和日期未最终公布。",details:["市政府只是“原则通过配送设备道路测试管理办法”。","具体测试道路尚未最终公布。","正式实施日期尚未最终公布。"],genres:["communication","commentary"],factContribution:true,warning:"“原则通过”不等于“机器人已获准全城上路”。",commentQuestion:"新技术进入城市，应该先有完整规则再开放，还是边试边建立规则？"}),
+  material({id:"ROB_BG_01",storyline:"robot",type:"background",title:"道路测试政策",actionLabel:"查询道路测试政策",source:{name:"S城市政府会议资料",identity:"政策公开资料"},sourceTag:"官方资料",summary:"管理办法只获原则通过，具体道路和日期未最终公布。",details:["市政府只是“原则通过配送设备道路测试管理办法”。","具体测试道路尚未最终公布。","正式实施日期尚未最终公布。"],genres:["news","commentary"],factContribution:true,warning:"“原则通过”不等于“机器人已获准全城上路”。",commentQuestion:"新技术进入城市，应该先有完整规则再开放，还是边试边建立规则？"}),
 
   /* 暴雨城市主线 */
-  material({id:"RAIN_INT_01",storyline:"rain",actionLabel:"采访气象台值班预报员",source:{name:"沈遥",identity:"S城气象台值班预报员"},sourceTag:"直接采访 · 工作人员",summary:"预警随实时观测变化而升级。",details:["自动站雨量约每5分钟更新一次。"],quotes:["预警升级不代表上午预报错了，而是实时观测结果不断发生变化。"],genres:["communication","commentary"],factContribution:true}),
-  material({id:"RAIN_INT_02",storyline:"rain",actionLabel:"进入应急指挥中心采访",source:{name:"梁峰",identity:"应急指挥中心值班人员"},sourceTag:"直接采访 · 工作人员",summary:"多个城市系统在同一时段持续更新。",details:["屏幕同时包括地铁、道路、河流、水库、学校、景区。"],quotes:["最忙的时候不是某一个数字特别大，而是十几个系统同时在更新。"],genres:["communication","commentary"],factContribution:true}),
-  material({id:"RAIN_INT_03",storyline:"rain",actionLabel:"采访一名普通通勤者",source:{name:"谢琳",identity:"S城市民、通勤者、学生家长"},sourceTag:"直接采访 · 当事人",summary:"她在一天中连续遇到地铁异常、积水和学校停课通知。",details:["上午遇到地铁异常。","中午公司楼下出现积水。","下午收到孩子学校停止剩余课程通知。"],quotes:["早上我以为只是地铁坏了，到下午才发现这些可能都是同一场雨。"],genres:["communication"]}),
-  material({id:"RAIN_BG_01",storyline:"rain",type:"background",title:"本组掌握的暴雨时间线",actionLabel:"整理本组暴雨时间线",source:{name:"本编辑部已发现线索",identity:"动态生成，不读取未发现事件"},sourceTag:"记者现场",summary:"只按时间整理本组实际发现的暴雨相关事件。",genres:["communication","commentary"],autoGenres:["commentary"],factContribution:true,process:true,dynamic:"rain_timeline",warning:"这张卡只汇总本组已发现的 rain 事件，不代表城市全部情况。"}),
+  material({id:"RAIN_INT_01",storyline:"rain",actionLabel:"采访气象台值班预报员",source:{name:"沈遥",identity:"S城气象台值班预报员"},sourceTag:"直接采访 · 工作人员",summary:"预警随实时观测变化而升级。",details:["自动站雨量约每5分钟更新一次。"],quotes:["预警升级不代表上午预报错了，而是实时观测结果不断发生变化。"],genres:["news","commentary"],factContribution:true}),
+  material({id:"RAIN_INT_02",storyline:"rain",actionLabel:"进入应急指挥中心采访",source:{name:"梁峰",identity:"应急指挥中心值班人员"},sourceTag:"直接采访 · 工作人员",summary:"多个城市系统在同一时段持续更新。",details:["屏幕同时包括地铁、道路、河流、水库、学校、景区。"],quotes:["最忙的时候不是某一个数字特别大，而是十几个系统同时在更新。"],genres:["news","commentary"],factContribution:true}),
+  material({id:"RAIN_INT_03",storyline:"rain",actionLabel:"采访一名普通通勤者",source:{name:"谢琳",identity:"S城市民、通勤者、学生家长"},sourceTag:"直接采访 · 当事人",summary:"她在一天中连续遇到地铁异常、积水和学校停课通知。",details:["上午遇到地铁异常。","中午公司楼下出现积水。","下午收到孩子学校停止剩余课程通知。"],quotes:["早上我以为只是地铁坏了，到下午才发现这些可能都是同一场雨。"],genres:["news"]}),
+  material({id:"RAIN_BG_01",storyline:"rain",type:"background",title:"本组掌握的暴雨时间线",actionLabel:"整理本组暴雨时间线",source:{name:"本编辑部已发现线索",identity:"动态生成，不读取未发现事件"},sourceTag:"记者现场",summary:"只按时间整理本组实际发现的暴雨相关事件。",genres:["news","commentary"],autoGenres:["commentary"],factContribution:true,process:true,dynamic:"rain_timeline",warning:"这张卡只汇总本组已发现的 rain 事件，不代表城市全部情况。"}),
   material({id:"RAIN_VIEW_01",storyline:"rain",type:"viewpoint",title:"市民A",source:{name:"受访市民A",identity:"道路使用者"},sourceTag:"直接采访 · 当事人",summary:"把道路积水与排水能力联系起来。",quotes:["看到道路积水，我第一反应就是城市排水是不是不行。"],genres:["commentary"],autoGenres:["commentary"]}),
   material({id:"RAIN_VIEW_02",storyline:"rain",type:"viewpoint",title:"水务工程师",source:{name:"水务工程师",identity:"专业技术人员"},sourceTag:"第三方专家",summary:"强调排水系统存在设计标准与极端天气边界。",quotes:["排水系统都有设计标准，不可能保证所有极端天气下道路一滴水都不积。"],genres:["commentary"],autoGenres:["commentary"]}),
   material({id:"RAIN_VIEW_03",storyline:"rain",type:"viewpoint",title:"城市规划研究者",actionLabel:"采访城市规划研究者",source:{name:"城市规划研究者",identity:"第三方研究者"},sourceTag:"第三方专家",summary:"建议从预警、封控、转移和恢复速度综合评价。",quotes:["评价城市韧性不能只看有没有积水，还要看预警、封控、人员转移以及恢复速度。"],genres:["commentary"]}),
@@ -102,8 +159,8 @@ const REPORTING_MATERIALS = [
 
   /* 明星传言 */
   material({id:"RUM_CHAIN_01",storyline:"celebrity",type:"background",title:"09:06 · 原始帖子",source:{name:"社交平台原始帖子",identity:"09:06发布"},sourceTag:"社交平台原始材料",summary:"原帖使用不确定语气并带有问号。",details:["原始帖子：“好像在电子商业街看到林川？？？”"],genres:["commentary"],autoGenres:["commentary"],factContribution:true,quoteAllowed:true}),
-  material({id:"RUM_CHAIN_02",storyline:"celebrity",type:"background",title:"09:11 · 二次娱乐账号",source:{name:"二次娱乐账号",identity:"09:11转发"},sourceTag:"社交平台原始材料",summary:"不确定表述被改写为肯定标题。",details:["标题：“林川现身S城电子商业街！”"],genres:["commentary"],autoGenres:["commentary"],factContribution:true}),
-  material({id:"RUM_CHAIN_03",storyline:"celebrity",type:"background",title:"09:19 · 群聊转发",source:{name:"本地群聊截图",identity:"09:19传播"},sourceTag:"社交平台原始材料",summary:"群聊进一步转化为到场号召。",details:["群聊转发：“快去电子商业街，林川在！”"],genres:["commentary"],autoGenres:["commentary"],factContribution:true}),
+  material({id:"RUM_CHAIN_02",storyline:"celebrity",type:"background",title:"09:11 · 二次娱乐账号",source:{name:"二次娱乐账号",identity:"09:11转发"},sourceTag:"社交平台原始材料",summary:"不确定表述被改写为肯定标题。",details:["标题：“林川现身S城电子商业街！”"],genres:["news","commentary"],autoGenres:["commentary"],factContribution:true}),
+  material({id:"RUM_CHAIN_03",storyline:"celebrity",type:"background",title:"09:19 · 群聊转发",source:{name:"本地群聊截图",identity:"09:19传播"},sourceTag:"社交平台原始材料",summary:"群聊进一步转化为到场号召。",details:["群聊转发：“快去电子商业街，林川在！”"],genres:["news","commentary"],autoGenres:["commentary"],factContribution:true}),
   material({id:"RUM_VIEW_01",storyline:"celebrity",type:"viewpoint",title:"原始发布者",source:{name:"原始发布者",identity:"最初照片发布者"},sourceTag:"直接采访 · 当事人",summary:"认为问号已经表达不确定。",quotes:["我也没说肯定是他，我后面还打了两个问号。"],genres:["commentary"],autoGenres:["commentary"]}),
   material({id:"RUM_VIEW_02",storyline:"celebrity",type:"viewpoint",title:"普通转发者",source:{name:"普通转发者",identity:"群聊转发参与者"},sourceTag:"直接采访 · 当事人",summary:"认为自己只是转发。",quotes:["我没说是真的，我就是转了一下。"],genres:["commentary"],autoGenres:["commentary"]}),
   material({id:"RUM_VIEW_03",storyline:"celebrity",type:"viewpoint",title:"现场店员",actionLabel:"采访电子商业街店员",source:{name:"现场店员",identity:"电子商业街商户工作人员"},sourceTag:"直接采访 · 工作人员",summary:"人群中许多人并不知道在等谁。",quotes:["后来很多人根本不知道在等谁，看别人围着就停下来了。"],genres:["commentary"]}),
@@ -118,10 +175,10 @@ const REPORTING_MATERIALS = [
   material({id:"NIGHT_FIELD_04",storyline:"nightmarket",type:"field_note",title:"16:08，招牌灯",source:{name:"本报记者",identity:"16:08，老城夜市"},sourceTag:"记者现场",summary:"摊位基本收起，只剩几块招牌灯。",observations:["摊位基本收起。","整条夜市只剩几块还没有关闭的招牌灯。"],genres:["feature"],autoGenres:["feature"],warning:"不要增加专家、政策或宏大意义；这是一则生活新闻特写。"}),
 
   /* 财经因果 */
-  material({id:"MK_FACT_01",storyline:"market_causality",type:"fact",title:"新品与政策发生在行情之前",source:{name:"本编辑部已发现资料",identity:"08:48产品发布及政府会议议程"},sourceTag:"官方资料",summary:"星途新品发布；当天上午政府会议讨论配送设备道路测试。",details:["08:48，星途科技发布新品。","当天上午，政府会议讨论配送设备道路测试。"],genres:["commentary"],autoGenres:["commentary"],factContribution:true}),
-  material({id:"MK_FACT_02",storyline:"market_causality",type:"fact",title:"盘中行情背景",source:{name:"模拟市场数据",identity:"11:30市场快照"},sourceTag:"数据资料",summary:"机器人产业链盘中上涨2.1%，同时创业板整体相对活跃。",details:["11:30，机器人产业链盘中上涨2.1%。","同时，创业板整体相对活跃。"],genres:["commentary"],autoGenres:["commentary"],factContribution:true,reliabilityTag:"模拟市场数据"}),
+  material({id:"MK_FACT_01",storyline:"market_causality",type:"fact",title:"新品与政策发生在行情之前",source:{name:"本编辑部已发现资料",identity:"08:48产品发布及政府会议议程"},sourceTag:"官方资料",summary:"星途新品发布；当天上午政府会议讨论配送设备道路测试。",details:["08:48，星途科技发布新品。","当天上午，政府会议讨论配送设备道路测试。"],genres:["news","commentary"],autoGenres:["commentary"],factContribution:true}),
+  material({id:"MK_FACT_02",storyline:"market_causality",type:"fact",title:"盘中行情背景",source:{name:"模拟市场数据",identity:"11:30市场快照"},sourceTag:"数据资料",summary:"机器人产业链盘中上涨2.1%，同时创业板整体相对活跃。",details:["11:30，机器人产业链盘中上涨2.1%。","同时，创业板整体相对活跃。"],genres:["news","commentary"],autoGenres:["commentary"],factContribution:true,reliabilityTag:"模拟市场数据"}),
   material({id:"MK_VIEW_01",storyline:"market_causality",type:"viewpoint",title:"财经自媒体标题",source:{name:"财经自媒体",identity:"行情解读账号"},sourceTag:"社交平台原始材料",summary:"把新品发布直接写成板块上涨原因。",quotes:["星途发布新品，机器人板块应声大涨！"],genres:["commentary"],autoGenres:["commentary"],warning:"这是自媒体的因果判断，不是已经核实的市场事实。"}),
   material({id:"MK_VIEW_02",storyline:"market_causality",type:"viewpoint",title:"市场人士观点",source:{name:"受访市场人士",identity:"市场参与者"},sourceTag:"直接采访 · 当事人",summary:"时间相邻只能提示可能联系。",quotes:["时间相邻只能提示可能存在联系，不能证明是唯一原因。"],genres:["commentary"],autoGenres:["commentary"]}),
   material({id:"MK_VIEW_03",storyline:"market_causality",type:"viewpoint",title:"财经编辑观点",actionLabel:"采访财经编辑",source:{name:"财经编辑",identity:"第三方媒体从业者"},sourceTag:"第三方专家",summary:"市场可能不存在一个清楚、唯一的原因。",quotes:["读者喜欢一个清楚的原因，但市场经常根本不给你一个原因。"],genres:["commentary"]}),
-  material({id:"MK_BG_01",storyline:"market_causality",type:"background",title:"时间关系与因果关系",actionLabel:"查阅因果核验说明",source:{name:"财经核实手册",identity:"新闻采写背景资料"},sourceTag:"官方资料",summary:"“A发生在B之前”不能自动证明“A导致B”。",details:["新品发布与股票上涨目前只能说明两件事在时间上接近。","仍需要更多证据证明因果。"],genres:["commentary"],factContribution:true,warning:"不得把时间先后直接写成唯一因果。",commentQuestion:"为了让复杂新闻更容易理解，媒体可以把原因说得简单一点吗？"})
+  material({id:"MK_BG_01",storyline:"market_causality",type:"background",title:"时间关系与因果关系",actionLabel:"查阅因果核验说明",source:{name:"财经核实手册",identity:"新闻采写背景资料"},sourceTag:"官方资料",summary:"“A发生在B之前”不能自动证明“A导致B”。",details:["新品发布与股票上涨目前只能说明两件事在时间上接近。","仍需要更多证据证明因果。"],genres:["news","commentary"],factContribution:true,warning:"不得把时间先后直接写成唯一因果。",commentQuestion:"为了让复杂新闻更容易理解，媒体可以把原因说得简单一点吗？"})
 ];
