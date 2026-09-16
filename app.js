@@ -584,9 +584,7 @@
 
   function masthead(extra="") {
     const round=SIMULATION.rounds[deskRound()];
-    const resourceStatus=newsroomState.deadlineLocked
-      ? `<span><small>新闻日</small><b class="resource-count">已截稿 🔒</b></span>`
-      : `<span><small>剩余采访</small><b class="resource-count">${newsroomState.remainingInvestigations} 次</b></span>`;
+    const resourceStatus=`<span><small>剩余采访</small><b class="resource-count">${newsroomState.remainingInvestigations} 次</b></span>`;
     return `<header class="masthead v1-masthead"><div class="identity"><span class="edition">SC</span><div><h1>S城新闻沙盘</h1><p>S CITY DESK · 城市新闻模拟编辑台</p></div></div><div class="desk-status"><span><small>ROUND</small><b>${round?.code || "NEWS DAY"}</b></span><span><small>当前时间</small><b>${round?.time || "09:00"}</b></span><span><small>当前DESK</small><b>${DESKS[newsroomState.currentDesk]?.code || "CITY"}</b></span>${resourceStatus}<span><small>已发现</small><b>${newsroomState.discoveredEvents.length} 条</b></span>${extra}</div></header>`;
   }
   const THINK_PROMPTS={
@@ -620,7 +618,7 @@
   }
 
   function regionLayer() { return REGIONS.map(region=>`<div class="region tone-${region.tone} region-${region.id}" style="--x:${region.x}%;--y:${region.y}%;--w:${region.w}%;--h:${region.h}%"><span>${region.name}</span></div>`).join(""); }
-  function availableLocationEvents(locationId) { if(newsroomState.deadlineLocked)return[];const round=deskRound();return EVENTS.filter(event=>event.location===locationId&&event.round<=round&&event.accessType!=="investigation"&&!isDiscovered(event.id)&&prerequisitesMet(event)); }
+  function availableLocationEvents(locationId) { const round=deskRound();return EVENTS.filter(event=>event.location===locationId&&event.round<=round&&event.accessType!=="investigation"&&!isDiscovered(event.id)&&prerequisitesMet(event)); }
   function mapNodes() {
     return LOCATIONS.map(location=>{
       const unread=availableLocationEvents(location.id).length;
@@ -666,14 +664,12 @@
     return `<section class="evidence-compare"><b>证据对照提示</b><p><strong>此前我们知道：</strong>${html(base?`${base.publishTime}｜${base.title}`:"13:00已有重点新闻")}</p><p><strong>现在的新证据：</strong>${html(`${event.publishTime}｜${event.title}`)}</p><p><strong>请特别比较：</strong>时间 / 范围 / 来源 / 确定程度等关键词。</p><div>${["印证","补充","限定","修正 / 反转","证伪","暂时无法判断"].map(label=>`<label><input type="radio" name="evidenceRelation-${event.id}"> ${label}</label>`).join("")}</div></section>`;
   }
   function investigationOptions(locationId) {
-    if(newsroomState.deadlineLocked)return"";
     const options=EVENTS.filter(event=>event.location===locationId&&event.round<=deskRound()&&event.accessType==="investigation"&&!isDiscovered(event.id)&&prerequisitesMet(event));
     if(!options.length)return"";
     return `<section class="investigation-box"><header><span>REPORTER ACTION</span><b>可执行记者调查</b></header>${options.map(event=>`<div><p>这条线索需要记者主动获取，行动前不会显示结果。</p><button data-investigate="${event.id}" ${newsroomState.remainingInvestigations<event.cost?"disabled":""}>${event.actionLabel}<small>消耗 ${event.cost} 次采访机会</small></button></div>`).join("")}</section>`;
   }
   function specialEntryModule(location) {
     if(!location.channels?.length)return"";
-    if(newsroomState.deadlineLocked)return `<section class="entry-module locked-entry"><header><span>NEWS DAY CLOSED</span><b>特殊信息入口已停止刷新</b></header><p>17:00截稿后只能回看左栏中已经发现的信息，不会再显示新的市场快照、政务信息或电讯更新。</p></section>`;
     if(location.entryType==="market"){
       const snapshot=MARKET_SNAPSHOTS[deskRound()]||MARKET_SNAPSHOTS[1];
       return `<section class="entry-module market-entry"><header><span>MARKET SNAPSHOT</span><b>${snapshot.note}</b><small>${snapshot.session}</small></header><div class="market-indexes">${snapshot.indexes.map(([group,name,value,change,state])=>`<article><span>${group} · ${state}</span><b>${name}</b><strong>${value}</strong><em class="${change.includes("-")?"down":""}">${change}</em></article>`).join("")}</div><div class="sector-strip">${snapshot.sectors.map(item=>`<span>${item}</span>`).join("")}</div><p>价格变化是事实；关于“为什么涨跌”的解释可能只是分析，仍需核实。</p></section>`;
@@ -689,16 +685,14 @@
   }
   function roundAction() {
     const round=deskRound();
-    if(round===1)return`<button data-action="meeting1" class="desk-next">${newsroomState.deadlineLocked?"继续查看09:00编辑会":"进入09:00编辑会"} →</button>`;
-    if(round===2)return`<button data-action="meeting2" class="desk-next">${newsroomState.deadlineLocked?"继续查看13:00编辑会":"进入13:00编辑会"} →</button>`;
-    if(newsroomState.deadlineLocked)return`<button data-action="first-period-deadline" class="desk-next danger">继续查看17:00截稿单 →</button>`;
+    if(round===1)return`<button data-action="meeting1" class="desk-next">进入09:00编辑会 →</button>`;
+    if(round===2)return`<button data-action="meeting2" class="desk-next">进入13:00编辑会 →</button>`;
     const readiness=reportingPlanFeasibility();
     return `<div class="deadline-gate ${readiness.ready?"ready":"not-ready"}"><small>${readiness.ready?"后续四文体采写基础已具备":html(readiness.reasons[0]||"还可继续发现新闻，也可以进入截稿")}</small><button data-action="deadline" class="desk-next danger">完成最终核实 · 进入17:00截稿单 →</button></div>`;
   }
   function deskSwitch() { return `<nav class="desk-switch" aria-label="新闻Desk切换">${Object.entries(DESKS).map(([key,desk])=>`<button class="${newsroomState.currentDesk===key?"active":""}" data-desk="${key}"><span>${desk.code}</span>${desk.label}</button>`).join("")}</nav>`; }
-  function cityDeskMain() { return `<section class="map-panel panel"><header class="section-head map-head"><div><span class="kicker">PRIMARY NEWS ENTRY</span><h2>S城都市新闻地图</h2></div><div class="map-legend"><span><i class="new-key"></i>NEW · 可查询新信息</span><span><i class="metro-key"></i>城市轨道</span></div></header><div class="city-map" id="cityMap"><div class="region-layer">${regionLayer()}</div><div class="water s-bay"><b>S湾</b><small>S BAY</small></div><div class="water east-coast"><b>东湾海岸</b><small>EAST BAY COAST</small></div><div class="river"><span>青川河</span></div><div class="road road-axis"><span>城市中轴大道</span></div><div class="road road-bay"><span>滨湾大道</span></div><div class="road road-east"><span>东部快速路</span></div><div class="metro metro-1"><span>1</span></div><div class="metro metro-2"><span>2</span></div><div class="metro metro-3"><span>3</span></div><div id="locationLayer">${mapNodes()}</div><div class="north">N<br>↑</div></div><footer class="map-caption"><span>${newsroomState.deadlineLocked?"新闻日已截稿：地图仅供回看":"地图是本轮唯一主要信息入口"}</span><span>${newsroomState.deadlineLocked?"不会再产生任何新线索":"点击 NEW 地点，新增信息才会进入左栏"}</span></footer></section>`; }
+  function cityDeskMain() { return `<section class="map-panel panel"><header class="section-head map-head"><div><span class="kicker">PRIMARY NEWS ENTRY</span><h2>S城都市新闻地图</h2></div><div class="map-legend"><span><i class="new-key"></i>NEW · 可查询新信息</span><span><i class="metro-key"></i>城市轨道</span></div></header><div class="city-map" id="cityMap"><div class="region-layer">${regionLayer()}</div><div class="water s-bay"><b>S湾</b><small>S BAY</small></div><div class="water east-coast"><b>东湾海岸</b><small>EAST BAY COAST</small></div><div class="river"><span>青川河</span></div><div class="road road-axis"><span>城市中轴大道</span></div><div class="road road-bay"><span>滨湾大道</span></div><div class="road road-east"><span>东部快速路</span></div><div class="metro metro-1"><span>1</span></div><div class="metro metro-2"><span>2</span></div><div class="metro metro-3"><span>3</span></div><div id="locationLayer">${mapNodes()}</div><div class="north">N<br>↑</div></div><footer class="map-caption"><span>地图是本轮唯一主要信息入口</span><span>点击 NEW 地点，新增信息才会进入左栏</span></footer></section>`; }
   function deskInvestigationCards(desk) {
-    if(newsroomState.deadlineLocked)return"";
     const options=EVENTS.filter(event=>event.desk===desk&&event.round<=deskRound()&&event.accessType==="investigation"&&!isDiscovered(event.id)&&prerequisitesMet(event));
     return options.map(event=>`<article class="desk-action-card"><span>REPORTER ACTION</span><h3>仍有关键问题需要主动核实</h3><p>行动前不会显示调查结果。</p><button data-investigate="${event.id}" ${newsroomState.remainingInvestigations<event.cost?"disabled":""}>${event.actionLabel}<small>消耗 ${event.cost} 次采访机会</small></button></article>`).join("");
   }
@@ -733,7 +727,7 @@
     const round=SIMULATION.rounds[viewRound];
     const wireItems=knownEvents();
     const taskText=viewRound===1?"发现新闻后，请判断它是否值得进入你们的选题池。选题池最多10条。":viewRound===2?"回看上午关注的事情，并寻找可能改变判断的新信息。新发现新闻也要先进入选题池。":"围绕你们已经选择的新闻，寻找最后的新证据，完成截稿前核实。";
-    app.innerHTML=`${masthead()}${publicationMemoryCard()}${taskHint(taskText,`round${viewRound}`)}${finalCheckFocusPanel()}<div class="desk-ribbon ${newsroomState.deadlineLocked?"locked":""}"><span>${round.code} · ${round.time}</span><p>${newsroomState.deadlineLocked?"新闻日已截稿 · 当前为历史回看；新线索获取、采访和调查已锁定。":`${round.focus}：${viewRound===1?"点击地图发现线索，再作编辑初判。":viewRound===2?"地图上的 NEW 表示有待查询更新。":"17:00不是重新选新闻，先检查13:00三条重点新闻的新变化。"}`}</p><time>${newsroomState.deadlineLocked?"HISTORY VIEW":"ENTRY: CITY MAP"}</time></div>${finalCheckProgressPanel()}<main class="news-desk v1-desk four-desk-layout map-first-layout"><section class="wire-panel panel"><header class="section-head discovered-head"><div><span>DISCOVERED WIRE</span><h2>已发现线索</h2></div><b>${wireItems.length} 条</b></header><div class="wire-filter"><span><i class="live-dot"></i>我的编辑标记</span><div class="wire-filter-buttons">${wireFilterButton("all","全部")}${wireFilterButton("tracking","追踪","★")}${wireFilterButton("pending","待核","？")}${wireFilterButton("confirmed","确认","✓")}</div></div><div id="wireList" class="wire-list">${renderWire()}</div></section>${cityDeskMain()}<aside class="detail-panel panel" id="detailPanel">${detailPanel()}</aside></main>${finalCheckJudgementPanel()}<footer class="stage-dock v1-stage"><div class="stage-intro"><span class="kicker">${round.code}</span><b>${round.time} · ${round.label}</b></div><div class="round-progress">${[1,2,3].map(n=>`<span class="${n===viewRound?"active":n<viewRound?"done":""}"><i>${n}</i>${SIMULATION.rounds[n].focus}</span>`).join("")}</div><div class="discovery"><span>${newsroomState.deadlineLocked?"新闻日状态":"剩余采访"} <b>${newsroomState.deadlineLocked?"已截稿 🔒":`${newsroomState.remainingInvestigations} 次`}</b></span>${globalDeskStats()}</div>${roundAction()}</footer>${pitchPoolPanel()}${pitchDecisionModal()}`;
+    app.innerHTML=`${masthead()}${publicationMemoryCard()}${taskHint(taskText,`round${viewRound}`)}${finalCheckFocusPanel()}<div class="desk-ribbon ${newsroomState.deadlineLocked?"locked":""}"><span>${round.code} · ${round.time}</span><p>${`${round.focus}：${viewRound===1?"点击地图发现线索，再作编辑初判。":viewRound===2?"地图上的 NEW 表示有待查询更新。":"17:00不是重新选新闻，先检查13:00三条重点新闻的新变化。"}`}</p><time>ENTRY: CITY MAP</time></div>${finalCheckProgressPanel()}<main class="news-desk v1-desk four-desk-layout map-first-layout"><section class="wire-panel panel"><header class="section-head discovered-head"><div><span>DISCOVERED WIRE</span><h2>已发现线索</h2></div><b>${wireItems.length} 条</b></header><div class="wire-filter"><span><i class="live-dot"></i>我的编辑标记</span><div class="wire-filter-buttons">${wireFilterButton("all","全部")}${wireFilterButton("tracking","追踪","★")}${wireFilterButton("pending","待核","？")}${wireFilterButton("confirmed","确认","✓")}</div></div><div id="wireList" class="wire-list">${renderWire()}</div></section>${cityDeskMain()}<aside class="detail-panel panel" id="detailPanel">${detailPanel()}</aside></main>${finalCheckJudgementPanel()}<footer class="stage-dock v1-stage"><div class="stage-intro"><span class="kicker">${round.code}</span><b>${round.time} · ${round.label}</b></div><div class="round-progress">${[1,2,3].map(n=>`<span class="${n===viewRound?"active":n<viewRound?"done":""}"><i>${n}</i>${SIMULATION.rounds[n].focus}</span>`).join("")}</div><div class="discovery"><span>剩余采访 <b>${newsroomState.remainingInvestigations} 次</b></span>${globalDeskStats()}</div>${roundAction()}</footer>${pitchPoolPanel()}${pitchDecisionModal()}`;
     appendBackButton();
     if(preserved)restoreDeskScroll(preserved);
     updatePitchModalButton();
@@ -932,7 +926,7 @@
     const items=normalizeBriefCandidates(data.briefCandidates||newsroomState.briefCandidates).map(id=>eventById(id)).filter(Boolean);
     return `<section class="fp-submit-briefs"><header><span>S CITY NEWS BRIEFS</span><h2>今日简讯候选</h2><p>这些新闻来自第一课时选题池，不替代四篇主体作品；第二课时将在这里继续写成3—6条“S城简讯”。</p></header><div>${items.map((event,index)=>`<article><span>简讯候选 ${index+1}</span><h3>${html(event.title)}</h3><p>${html(data.briefFacts?.[event.id]||finalBriefDraftFor(event.id).body||event.content)}</p><small>${event.publishTime}｜${html(event.source)}｜${verificationLabel(event.verificationStatus)}</small></article>`).join("")||"<p>尚未选择简讯候选。</p>"}</div></section>`;
   }
-  function renderDeadline() { app.innerHTML=`<section class="scene transition-scene deadline-scene"><span>17:00 · EDITION CLOSE</span><time>${termInfo("DEADLINE","截稿后可以继续修改文章，但不能再获得新的新闻信息。")}</time><h1>新闻日采访结束。</h1>${taskHint("确认新闻日结束。截稿后可以修改文章，但不能再获得新的新闻信息。","")}<p>地图调查已经锁定。接下来先完成第一课时阶段成果，<br>用截稿单记录你们17:00时的编辑判断。</p><div>${newsroomState.discoveredEvents.length}<small>已获得线索</small></div><button class="primary-action" data-action="first-period-deadline">完成第一课时截稿单 →</button></section>`; }
+  function renderDeadline() { app.innerHTML=`<section class="scene transition-scene deadline-scene"><span>17:00 · EDITION CLOSE</span><time>${termInfo("DEADLINE","截稿是课堂流程节点，不会锁定已填写内容。")}</time><h1>新闻日阶段记录。</h1>${taskHint("确认进入17:00截稿单。之后仍可返回地图、编辑会和写作台继续修改。","")}<p>接下来完成第一课时阶段成果，<br>用截稿单记录你们17:00时的编辑判断。</p><div>${newsroomState.discoveredEvents.length}<small>已获得线索</small></div><button class="primary-action" data-action="first-period-deadline">完成第一课时截稿单 →</button></section>`; }
   function renderFirstPeriodDeadline() {
     const data=newsroomState.firstPeriodSubmission;
     app.innerHTML=`${masthead()}<main class="scene first-period-scene"><header class="first-period-header"><span>第一课时阶段成果</span><strong>本页需截图提交 · 将计入第一课时评分</strong><h1>17:00｜编辑部截稿单</h1><p>新闻日已经结束。现在，请用这张截稿单说明：你们为什么选择这些新闻，你们相信了什么，哪些信息仍然不能确认，什么新证据改变了你们的判断，以及下一课时还需要继续寻找什么。</p><b>FIRST PERIOD · EDITORIAL DEADLINE REPORT</b></header><form id="firstPeriodForm" class="first-period-form"><section class="fp-requirements"><h2>第一课时阶段成果提交要求</h2><ul><li>请认真完成本页所有必填内容。</li><li>不能只勾选新闻，必须写出选择理由和判断依据。</li><li>本页完成后将生成“第一课时截稿单提交版”。</li><li>请将提交版完整截图，提交给老师。</li><li>本页将纳入第一课时过程性评价。</li></ul><b>提交提醒：完成本页后，请点击“生成第一课时提交版”，并将生成页面完整截图提交给老师。</b></section><section class="fp-block"><header><span>01</span><h2>我们的编辑选择</h2><p>截至17:00，请从本组已经发现的新闻中选择3条继续追踪的新闻。每条都必须说明为什么值得继续追踪。</p></header><div class="fp-news-grid">${data.topStories.map((item,index)=>`<article class="fp-news-card"><span>NEWS ${String(index+1).padStart(2,"0")}</span><label>选择新闻 *<select name="top${index}Event">${eventOptionList(item.eventId)}</select></label>${firstPeriodEventMini(item.eventId)}<fieldset><legend>新闻价值 NEWS VALUE *</legend>${FIRST_PERIOD_NEWS_VALUES.map(([id,label,desc])=>`<label><input type="checkbox" name="top${index}Values" value="${id}" ${item.newsValues.includes(id)?"checked":""}><b>${label}</b><small>${desc}</small></label>`).join("")}</fieldset><label>为什么选择继续追踪这条新闻？*<textarea name="top${index}ValueReason" maxlength="180" placeholder="例如：它涉及第三中学停课问题，对学生和家长都有直接影响，具有明显的重要性和接近性。我们接下来想弄清楚停课范围和恢复时间。">${html(item.valueReason)}</textarea></label>${firstPeriodReasonGuide()}<fieldset class="fp-radio"><legend>真实性与核实 VERIFICATION *</legend>${FIRST_PERIOD_VERIFICATIONS.map(([id,label])=>`<label><input type="radio" name="top${index}Verification" value="${id}" ${item.verificationDecision===id?"checked":""}>${label}</label>`).join("")}</fieldset><label>我们这样判断的依据是什么？*<textarea name="top${index}VerificationReason" maxlength="120" placeholder="说明信息来自谁、是否有第二来源、现场或官方回应。">${html(item.verificationReason)}</textarea></label></article>`).join("")}</div><div class="fp-headline-choice"><label>从上述3条中选择当前头条候选 *<select name="headlineEventId">${firstPeriodHeadlineOptions(data)}</select></label><p>头条候选不是“最热闹”的新闻，而是你们认为最需要优先报道、最能体现公共价值的一条。</p></div></section><section class="fp-block"><header><span>02</span><h2>证据怎样改变了我们的判断？</h2><p>EVIDENCE CHANGED OUR MIND</p></header><div class="fp-change-grid"><label>上午 / 较早时，我们原本认为……<textarea name="changeBefore" maxlength="100">${html(data.judgementChange.before)}</textarea></label><div class="fp-evidence-pick"><b>后来出现的新证据是……</b>${evidenceOptionList(data.judgementChange.evidenceIds)}</div><label>这条证据为什么重要？<textarea name="changeEvidenceReason" maxlength="100">${html(data.judgementChange.evidenceReason)}</textarea></label><label>所以17:00时，我们现在认为……<textarea name="changeAfter" maxlength="100">${html(data.judgementChange.after)}</textarea></label></div></section><section class="fp-block fp-two-col"><div><header><span>03</span><h2>截稿前，我们最后确认一次</h2></header><fieldset class="fp-checklist">${FIRST_PERIOD_CHECKS.map(([id,label])=>`<label><input type="checkbox" name="check-${id}" ${data.verificationChecklist[id]?"checked":""}>${label}</label>`).join("")}</fieldset><label>目前最不能确定的一件事是什么？*<textarea name="biggestUncertainty" maxlength="100">${html(data.biggestUncertainty)}</textarea></label></div><div><header><span>04</span><h2>下一步采写计划</h2><p>NEXT REPORTING MOVE</p></header><label>下一课时，我们最想继续报道哪一件事？*<select name="nextStoryId">${nextReportingOptions(data.nextReporting.storyId)}</select></label><label>如果这篇报道只能回答一个问题，我们最想回答什么？*<textarea name="nextQuestion" maxlength="120" placeholder="例如：学校停课安排是否已经正式确认，以及还有哪些年级和活动会受到影响？">${html(data.nextReporting.question)}</textarea></label>${firstPeriodQuestionGuide()}<fieldset class="fp-needs"><legend>为了回答这个问题，我们还缺什么？*</legend>${FIRST_PERIOD_NEEDS.map(need=>`<label><input type="checkbox" name="nextNeeds" value="${need}" ${data.nextReporting.needs.includes(need)?"checked":""}>${need}</label>`).join("")}</fieldset><label>为什么需要这些材料？*<textarea name="nextReason" maxlength="120">${html(data.nextReporting.reason)}</textarea></label></div></section><section class="fp-block fp-boundary"><label>截至17:00，我们最确定的事实是：<textarea name="mostCertainFact" maxlength="80">${html(data.mostCertainFact)}</textarea></label><label>截至17:00，我们最需要继续核实的是：<textarea name="stillNeedsVerification" maxlength="80">${html(data.stillNeedsVerification)}</textarea></label></section><footer><div><b>第一课时过程性评价｜20分</b><span>生成后请完整截图，本页将用于第一课时评分。</span></div><button class="secondary-action" type="button" data-action="first-period-save-draft">保存草稿</button><button class="primary-action" type="submit">生成第一课时提交版 →</button></footer></form></main>`;
@@ -1286,7 +1280,6 @@
   }
 
   function openDesk(desk) {
-    if(newsroomState.deadlineLocked){toast("新闻日已截稿：Desk仅可回看已发现信息");return;}
     newsroomState.currentDesk=desk;
     newsroomState.deskOpenCounts[desk]=(newsroomState.deskOpenCounts[desk]||0)+1;
     let found=0;
@@ -1296,13 +1289,6 @@
 
   function handleMapClick(locationId) {
     const location=locationById(locationId);
-    if(newsroomState.deadlineLocked){
-      if(!newsroomState.discoveredLocations.includes(locationId)){toast("新闻日已截稿：未在截稿前打开的地点不能再获取信息");return;}
-      newsroomState.selectedLocation=locationId;newsroomState.selectedEvent=null;
-      const deskByEntry={government:"government",market:"markets",wire:"national_world"};
-      newsroomState.currentDesk=deskByEntry[location?.entryType]||"city";
-      saveState();renderDesk({preserveScroll:true});toast("新闻日已截稿：当前仅回看截稿前已发现的信息");return;
-    }
     newsroomState.selectedLocation=locationId; newsroomState.selectedEvent=null;
     if(!newsroomState.discoveredLocations.includes(locationId))newsroomState.discoveredLocations.push(locationId);
     const deskByEntry={government:"government",market:"markets",wire:"national_world"};
@@ -1314,15 +1300,14 @@
   }
   function investigate(id) {
     const event=eventById(id);
-    if(newsroomState.deadlineLocked||isDiscovered(id)||!prerequisitesMet(event))return;
+    if(isDiscovered(id)||!prerequisitesMet(event))return;
     if(newsroomState.remainingInvestigations<event.cost){toast("采访机会不足");return;}
     newsroomState.remainingInvestigations-=event.cost; discover(id,event.acquisition||"记者采访");
     newsroomState.investigationHistory.push({eventId:id,action:event.actionLabel,time:SIMULATION.rounds[deskRound()].time,round:deskRound()});
     newsroomState.selectedEvent=id; newsroomState.selectedLocation=event.location; newsroomState.currentDesk=event.desk; newsroomState.wireTab="discovered"; saveState(); renderDesk({preserveScroll:true}); toast(`调查完成：线索已进入左栏，剩余 ${newsroomState.remainingInvestigations} 次采访机会`);
   }
-  function changeEditorial(id,status) { if(newsroomState.deadlineLocked){toast("新闻日已截稿：编辑标记已锁定");return;} newsroomState.editorialStatuses[id]=status; const history=newsroomState.statusHistory[id]||[]; if(history.at(-1)?.status!==status)history.push({time:SIMULATION.rounds[deskRound()].time,status}); newsroomState.statusHistory[id]=history; saveState(); renderDesk({preserveScroll:true}); }
+  function changeEditorial(id,status) { newsroomState.editorialStatuses[id]=status; const history=newsroomState.statusHistory[id]||[]; if(history.at(-1)?.status!==status)history.push({time:SIMULATION.rounds[deskRound()].time,status}); newsroomState.statusHistory[id]=history; saveState(); renderDesk({preserveScroll:true}); }
   function savePitchDecision(id,{add=false,remove=false,skip=false,fromModal=false}={}) {
-    if(newsroomState.deadlineLocked){toast("新闻日已截稿：选题池已锁定");return;}
     const event=eventById(id); if(!event)return;
     if(!add&&!remove&&!skip&&!fromModal){toast("已暂不加入选题池");return;}
     const values=fromModal
@@ -1357,7 +1342,6 @@
   }
   function openPitchModal(id) { newsroomState.pendingPitchEventId=id; renderDesk({preserveScroll:true}); }
   function toggleBriefCandidate(id) {
-    if(newsroomState.deadlineLocked){toast("新闻日已截稿：简讯候选已锁定");return;}
     if(!pitchEntry(id)){toast("简讯候选必须先加入选题池。");return;}
     const set=new Set(normalizeBriefCandidates(newsroomState.briefCandidates));
     if(set.has(id)){set.delete(id);toast("已取消简讯候选");}
