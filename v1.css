@@ -100,7 +100,7 @@ textarea{line-height:1.7!important}
 
 /* 学生流程修复：清楚区分写作篇幅状态，并让长表单更容易在课堂屏幕上操作。 */
 .word-meter strong.empty{color:#7d8a86!important}.word-meter strong.under{color:#a7632d!important}.word-meter strong.ready{color:#26766c!important}.word-meter strong.over{color:#a4473c!important}
-@media(min-width:821px){.writing-paper{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}}
+@media(min-width:821px){.writing-paper{position:relative;top:auto;max-height:none;overflow:visible}.writing-scene{min-height:100dvh;overflow-y:auto}.writing-scene .reporting-wrap{padding-bottom:100px}.writing-actions{position:sticky;bottom:0;z-index:30;margin:18px -22px -18px;padding:12px 22px;background:rgba(255,253,249,.96);border-top:1px solid #d8e0dd;box-shadow:0 -10px 24px rgba(20,43,53,.08)}}
 
 /* 最终版面会议：栏目按需展开，避免所有候选线索一次铺满整页。 */
 .edition-brief-groups{grid-template-columns:1fr!important;gap:10px!important}
