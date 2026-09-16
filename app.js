@@ -1488,8 +1488,7 @@
       if(!item.verificationDecision)errors.push(`请为“${label}”选择真实性与核实判断。`);
       if(!item.verificationReason)errors.push(`请补充“${label}”的核实判断依据。`);
     });
-    if(!data.headlineEventId)errors.push("请先选择当前头条候选。");
-    else if(!selected.includes(data.headlineEventId))errors.push("当前头条候选必须从已选的3条新闻中产生。");
+    if(data.headlineEventId&&!selected.includes(data.headlineEventId))errors.push("当前头条候选必须从已选的3条新闻中产生。");
     if(!data.biggestUncertainty)errors.push("请填写“我们目前最不能确定的地方”。");
     if(!data.nextReporting.storyId)errors.push("请选择下一课时最想继续报道的一件事。");
     if(!data.nextReporting.question)errors.push("请填写“我们现在最想弄清楚的问题”。");
