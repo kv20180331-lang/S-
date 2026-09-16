@@ -188,6 +188,9 @@ body:has(.news-desk.v1-desk.map-first-layout) .desk-ribbon{margin-block:4px!impo
 @media(max-width:1000px){.morning-submit-paper>header,.morning-submit-news,.morning-submit-grid{grid-template-columns:1fr}.morning-submit-paper aside{text-align:left}}
 @media print{.morning-submission{padding:0;background:#fff}.morning-submit-paper{max-width:none;padding:0;box-shadow:none;border:0}.fp-submit-actions,.scene-back,.clear-records-button{display:none!important}}
 
+.brief-candidate-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.brief-candidate-row{padding:13px;border:1px solid #d9e2de;border-radius:8px;background:#fbfaf5}.brief-candidate-row label{display:grid!important;grid-template-columns:20px 1fr;gap:8px;margin:0 0 8px!important}.brief-candidate-row b{display:block;color:var(--navy);font-size:17px;line-height:1.35}.brief-candidate-row small{display:block;margin-top:4px;color:#758681;font-size:13px;line-height:1.45}.brief-candidate-row textarea{min-height:76px!important}.fp-submit-briefs{margin:14px 0;padding:16px;border:1px solid #d4bd8a;background:#fff8e7}.fp-submit-briefs header span{color:#a64c3e;font:800 13px Georgia;letter-spacing:.1em}.fp-submit-briefs h2{margin:5px 0;font:700 23px Georgia,"Songti SC",serif;color:var(--navy)}.fp-submit-briefs header p{font-size:15px;color:#695d47}.fp-submit-briefs>div{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.fp-submit-briefs article{padding:12px;background:white;border:1px solid #e0d2ad}.fp-submit-briefs article span{color:#9b6130;font-size:13px;font-weight:800}.fp-submit-briefs h3{margin:5px 0;font:700 18px/1.35 Georgia,"Songti SC",serif}.fp-submit-briefs p{font-size:15px;line-height:1.6}.brief-workflow-note{margin-top:12px;padding:12px 14px;border-left:4px solid var(--orange);background:#fff6e8;color:#6f5836;font-size:16px!important;line-height:1.65!important}.pitch-pool-list article.brief-candidate{border-color:#d58b38;background:#fff6e8}.brief-write-row{border:1px solid #d9e2de;border-radius:9px;background:#fbfaf5;overflow:hidden}.brief-write-row>.edition-brief-row{border-bottom:1px solid #e0e5e2;background:#fff}.brief-write-fields{display:grid;grid-template-columns:1fr 2fr 1fr;gap:10px;padding:12px}.brief-write-fields label{margin:0!important;color:#526660;font-size:15px!important;font-weight:800}.brief-write-fields input,.brief-write-fields textarea{width:100%;margin-top:5px;padding:9px;border:1px solid #cbd6d2;border-radius:5px;background:white;color:var(--ink);font-size:16px}.brief-write-fields textarea{min-height:76px;line-height:1.6;resize:vertical}
+@media(max-width:1100px){.brief-candidate-list,.fp-submit-briefs>div,.brief-write-fields{grid-template-columns:1fr}}
+
 /* 地图地点名称完整显示：不省略、不裁边，边缘节点向地图内部让位。 */
 .city-map,#locationLayer,.region-layer,.landmark{overflow:visible!important}
 .city-map{padding:25px 35px 45px!important}
@@ -214,3 +217,72 @@ body:has(.news-desk.v1-desk.map-first-layout) .desk-ribbon{margin-block:4px!impo
 body:has(.news-desk.v1-desk.map-first-layout) .map-panel{padding-bottom:34px!important}
 body:has(.news-desk.v1-desk.map-first-layout) .city-map{min-height:790px!important;height:790px!important;overflow:visible!important}
 @media(max-height:820px) and (min-width:1101px){body:has(.news-desk.v1-desk.map-first-layout) .map-panel,body:has(.news-desk.v1-desk.map-first-layout) .city-map{min-height:790px!important}}
+
+/* 17:00最终核实页：脱离三栏地图锁屏布局，恢复整页纵向滚动。 */
+body:has(.final-check-panel){
+  height:auto!important;
+  min-height:100dvh!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+}
+body:has(.final-check-panel) #app{
+  height:auto!important;
+  min-height:100dvh!important;
+  display:block!important;
+  overflow:visible!important;
+  padding-bottom:0!important;
+}
+body:has(.final-check-panel) .publication-memory,
+body:has(.final-check-panel) .student-step-hint,
+body:has(.final-check-panel) .desk-ribbon,
+body:has(.final-check-panel) .final-check-panel,
+body:has(.final-check-panel) .final-progress-panel,
+body:has(.final-check-panel) .final-check-judgements{
+  flex:none!important;
+}
+body:has(.final-check-panel) .final-check-panel,
+body:has(.final-check-panel) .final-progress-panel,
+body:has(.final-check-panel) .final-check-judgements{
+  max-height:none!important;
+  overflow:visible!important;
+}
+body:has(.final-check-panel) .final-check-judgements header{
+  position:static!important;
+  background:transparent!important;
+  padding-bottom:0!important;
+}
+body:has(.final-check-panel) .news-desk.v1-desk.map-first-layout{
+  display:grid!important;
+  height:auto!important;
+  min-height:720px!important;
+  overflow:visible!important;
+  margin-bottom:18px!important;
+  padding-bottom:24px!important;
+}
+body:has(.final-check-panel) .news-desk.v1-desk.map-first-layout>*{
+  min-height:0!important;
+}
+body:has(.final-check-panel) .wire-panel,
+body:has(.final-check-panel) .map-panel,
+body:has(.final-check-panel) .detail-panel{
+  height:720px!important;
+  min-height:720px!important;
+  overflow-y:auto!important;
+  overflow-x:visible!important;
+}
+body:has(.final-check-panel) .event-list{
+  overflow:visible!important;
+  padding-bottom:56px!important;
+}
+body:has(.final-check-panel) .stage-dock.v1-stage{
+  position:sticky!important;
+  bottom:0!important;
+  z-index:80!important;
+  margin:0!important;
+  box-shadow:0 -10px 30px rgba(23,40,50,.16)!important;
+}
+body:has(.final-check-panel) .stage-dock.v1-stage .deadline-gate{
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+}
